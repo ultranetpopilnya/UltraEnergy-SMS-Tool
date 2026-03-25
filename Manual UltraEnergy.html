@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Fluent Manual</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0078d4;
+            --bg: #f9f9f9;
+            --sidebar-bg: rgba(255, 255, 255, 0.7);
+            --card-bg: #ffffff;
+            --text: #201f1e;
+            --secondary-text: #5d5d5d;
+            --radius: 12px;
+            --transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Нативне плавне ковзання */
+        html {
+            scroll-behavior: smooth;
+            /* Відступ зверху для якірних посилань, щоб заголовок не впирався в край */
+            scroll-padding-top: 50px; 
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar з ефектом розмиття (Mica/Acrylic) */
+        aside {
+            width: 280px;
+            height: 100vh;
+            position: fixed;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-right: 1px solid rgba(0,0,0,0.08);
+            padding: 2.5rem 1.5rem;
+            z-index: 100;
+        }
+
+        .nav-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        nav ul { list-style: none; }
+        nav li { margin-bottom: 0.5rem; }
+
+        nav a {
+            text-decoration: none;
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            display: block;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        nav a:hover {
+            background: rgba(0,0,0,0.04);
+            padding-left: 1.5rem;
+        }
+
+        nav a.active {
+            background: var(--primary);
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 120, 212, 0.25);
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 280px;
+            flex-grow: 1;
+            padding: 5vh 10vw;
+            max-width: 1400px;
+        }
+
+        .step-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 3.5rem;
+            margin-bottom: 5rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.03);
+            
+            /* Анімація появи */
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        /* Клас, який додасть JS при скролі */
+        .step-card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step-badge {
+            background: #eef6ff;
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin: 1.5rem 0;
+            letter-spacing: -0.5px;
+        }
+
+        .img-box {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #f0f0f0;
+            border-radius: 10px;
+            margin: 2.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Custom Scrollbar для браузерів */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+            border: 3px solid var(--bg);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        @media (max-width: 1024px) {
+            aside { width: 70px; padding: 2rem 0.5rem; }
+            aside span { display: none; }
+            main { margin-left: 70px; padding: 2rem 5%; }
+            .step-card { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div class="nav-title">🚀 <span>Мануал ISP</span></div>
+        <nav>
+            <ul id="sidebar-menu">
+                <li><a href="#step1" class="active"><span>01. Авторизація</span></a></li>
+                <li><a href="#step2"><span>02. Конфігурація</span></a></li>
+                <li><a href="#step3"><span>03. Перевірка логів</span></a></li>
+                <li><a href="#step4"><span>04. Завершення</span></a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main>
+        <section id="step1" class="step-card">
+            <span class="step-badge">Step 01</span>
+            <h2>Початок роботи</h2>
+            <p>Увійдіть у білінгову систему ABills. Використовуйте персональний токен для доступу до API.</p>
+            <div class="img-box">
+                <span style="color: #bbb;">[Зображення вікна логіну]</span>
+            </div>
+        </section>
+
+        <section id="step2" class="step-card">
+            <span class="step-badge">Step 02</span>
+            <h2>Налаштування OLT</h2>
+            <p>Перейдіть у розділ обладнання та виберіть потрібний OLT ZTE C300. Переконайтеся, що порт вказано без ведучого нуля.</p>
+            <div class="img-box">
+                <span style="color: #bbb;">[Скріншот конфігурації]</span>
+            </div>
+        </section>
+
+        <section id="step3" class="step-card">
+            <span class="step-badge">Step 03</span>
+            <h2>Моніторинг логів</h2>
+            <p>Відстежуйте стан підключення в реальному часі. Усі помилки будуть підсвічені червоним кольором.</p>
+            <div class="img-box">
+                <span style="color: #bbb;">[Скріншот логів]</span>
+            </div>
+        </section>
+
+        <section id="step4" class="step-card">
+            <span class="step-badge">Step 04</span>
+            <h2>Збереження результатів</h2>
+            <p>Натисніть кнопку "Save", щоб дані синхронізувалися з базою даних TurboSMS для відправки повідомлення клієнту.</p>
+        </section>
+    </main>
+
+    <script>
+        // 1. Плавна поява карток при скролі (Reveal Effect)
+        const observerOptions = {
+            threshold: 0.15 // Картка почне з'являтися, коли 15% її площі буде у вікні
+        };
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.step-card').forEach(card => {
+            revealObserver.observe(card);
+        });
+
+        // 2. Чітке підсвічування меню (Scroll Spy)
+        const navLinks = document.querySelectorAll('nav a');
+        const sections = document.querySelectorAll('.step-card');
+
+        const sectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, { threshold: 0.5 }); // Підсвічуємо, коли 50% секції в кадрі
+
+        sections.forEach(section => {
+            sectionObserver.observe(section);
+        });
+
+        // 3. Fix: Плавний перехід при кліку на меню (для Safari та старих Chrome)
+        navLinks.forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                window.scrollTo({
+                    top: targetElement.offsetTop - 40,
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
