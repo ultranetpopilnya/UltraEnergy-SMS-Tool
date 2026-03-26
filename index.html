@@ -360,45 +360,47 @@
 
 
         // 3. Гібридний скрол: Коліщатко миші -> Горизонтальний скрол галереї
-        document.querySelectorAll('.step-card').forEach(card => {
-            const gallery = card.querySelector('.image-gallery');
-            if (!gallery) return;
+        document.querySelectorAll('.image-gallery').forEach(gallery => {
+            let isScrolling = false;
 
-            let isThrottled = false;
+            gallery.addEventListener('wheel', (e) => {
+                // Перевіряємо, що користувач крутить саме вертикальне коліщатко миші
+                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                    
+                    // Визначаємо крайні точки галереї (з урахуванням масштабу екрану)
+                    const maxScrollLeft = gallery.scrollWidth - gallery.clientWidth;
+                    const atLeft = Math.ceil(gallery.scrollLeft) <= 0;
+                    const atRight = Math.ceil(gallery.scrollLeft) >= maxScrollLeft - 1;
 
-            card.addEventListener('wheel', (e) => {
-                // Ігноруємо горизонтальний скрол (наприклад, свайп на тачпаді ноутбука)
-                if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+                    // Чи є куди гортати в залежності від напрямку коліщатка?
+                    const canScrollRight = e.deltaY > 0 && !atRight;
+                    const canScrollLeft = e.deltaY < 0 && !atLeft;
 
-                // Перевіряємо, чи досягла галерея країв (з урахуванням можливих дробових пікселів)
-                const atLeft = Math.floor(gallery.scrollLeft) <= 0;
-                const atRight = Math.ceil(gallery.scrollLeft + gallery.clientWidth) >= gallery.scrollWidth - 1;
+                    // Якщо є куди гортати картинки:
+                    if (canScrollRight || canScrollLeft) {
+                        e.preventDefault(); // Зупиняємо рух самої сторінки вниз/вгору
 
-                // Скрол ВНИЗ
-                if (e.deltaY > 0 && !atRight) {
-                    e.preventDefault(); // Зупиняємо вертикальний скрол сторінки
-                    if (!isThrottled) {
-                        gallery.scrollBy({ left: gallery.clientWidth, behavior: 'smooth' });
-                        throttleScroll();
+                        if (!isScrolling) {
+                            isScrolling = true;
+                            
+                            // Гортаємо рівно на ширину одного блоку з картинкою
+                            const direction = e.deltaY > 0 ? 1 : -1;
+                            gallery.scrollBy({ 
+                                left: gallery.clientWidth * direction, 
+                                behavior: 'smooth' 
+                            });
+
+                            // Робимо паузу для коліщатка, поки йде плавна анімація, 
+                            // щоб слайди не перелітали по 2-3 штуки за раз
+                            setTimeout(() => {
+                                isScrolling = false;
+                            }, 400); 
+                        }
                     }
-                } 
-                // Скрол ВГОРУ
-                else if (e.deltaY < 0 && !atLeft) {
-                    e.preventDefault(); // Зупиняємо вертикальний скрол сторінки
-                    if (!isThrottled) {
-                        gallery.scrollBy({ left: -gallery.clientWidth, behavior: 'smooth' });
-                        throttleScroll();
-                    }
+                    // Якщо галерея дійшла до кінця (або початку) — блокування знімається 
+                    // і сторінка плавно продовжує скролитись вниз/вгору.
                 }
-                // Якщо галерея досягла краю — e.preventDefault() не викликається, 
-                // і сторінка природно скролиться далі вниз або вгору.
-            }, { passive: false }); // passive: false обов'язковий для роботи preventDefault
-
-            // Затримка, щоб одне прокручування коліщатка = один слайд
-            function throttleScroll() {
-                isThrottled = true;
-                setTimeout(() => { isThrottled = false; }, 450); 
-            }
+            }, { passive: false }); // Дозволяє використовувати e.preventDefault()
         });
 
         // 4. Лупа по кліку (Збільшення 2x та переміщення)
