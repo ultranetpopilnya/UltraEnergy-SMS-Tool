@@ -101,29 +101,58 @@ async function scrapeAbillsData() {
     let result = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
     let phoneSet = new Set(); 
 
-    // Функція пошуку суми кредиту (тільки додатні числа > 0)
+    // Функція пошуку суми кредиту
     const getAmount = (doc) => {
         let input = doc.getElementById('CREDIT') || doc.querySelector('input[name="CREDIT"]');
         if (input) {
             let rawValue = input.value || input.getAttribute('placeholder') || '';
-            // Замінюємо кому на крапку (на випадок 12,50) і видаляємо всі зайві символи, крім цифр
             let cleanValue = rawValue.replace(/,/g, '.').replace(/[^\d.]/g, '');
             let val = parseFloat(cleanValue);
-            
-            // Якщо число розпізнано і воно строго БІЛЬШЕ нуля (0 ігнорується)
-            if (!isNaN(val) && val > 0) {
-                return val.toString(); 
-            }
+            if (!isNaN(val) && val > 0) return val.toString(); 
         }
         return '';
+    };
+
+    // ОПТИМІЗАЦІЯ 1: Виносимо логіку пошуку пароля/договору в окрему функцію для перевикористання
+    const extractCredentials = (docToSearch) => {
+        let creds = { contract: null, password: null };
+        
+        // ОПТИМІЗАЦІЯ 2: Використовуємо швидкий CSS-селектор замість перебору ВСІХ кнопок
+        let copyElements = docToSearch.querySelectorAll('[onclick*="copyToBuffer"]');
+        for (let btn of copyElements) {
+            let onclick = btn.getAttribute('onclick');
+            let match = onclick.match(/copyToBuffer\(['"]([^'"]+)['"]\)/);
+            if (match && match[1]) {
+                let extractedValue = match[1];
+                let btnText = (btn.innerText || btn.title || '').toLowerCase();
+                
+                if (btnText.includes('контракт') || btnText.includes('договір') || btnText.includes('договор') || btnText.includes('contract')) {
+                    creds.contract = extractedValue;
+                } else if (btnText.includes('пароль') || btnText.includes('password') || btnText.includes('pass')) {
+                    creds.password = extractedValue;
+                }
+            }
+        }
+
+        // Запасний варіант пошуку в інпутах
+        if (!creds.contract) {
+            let contractInput = docToSearch.querySelector('input[name="CONTRACT"], input[id="CONTRACT"], .contract_template_value');
+            if (contractInput && contractInput.value) creds.contract = contractInput.value;
+        }
+        if (!creds.password) {
+            let passInput = docToSearch.querySelector('input[name="PASSWORD"], input[id="PASSWORD"], input[name="PASS"]');
+            if (passInput && passInput.value) creds.password = passInput.value;
+        }
+        
+        return creds;
     };
 
     try {
         // 1. Шукаємо кредит на поточній сторінці
         result.credit = getAmount(document);
 
-        // Парсимо номери телефонів
-        let bodyText = document.body.innerText;
+        // ОПТИМІЗАЦІЯ 3: Використовуємо textContent замість innerText (працює в рази швидше, бо не рендерить CSS)
+        let bodyText = document.body.textContent || "";
         let phoneRegex = /(?:\+?38)?[\s\(]*0\d{2}[\s\)]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/g;
         let matches = bodyText.match(phoneRegex);
         if (matches) {
@@ -143,53 +172,36 @@ async function scrapeAbillsData() {
         }
         result.phones = Array.from(phoneSet); 
 
-        // Шукаємо UID для фонового запиту
-        let uid = null;
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('UID')) uid = urlParams.get('UID');
-        if (!uid) {
-            let uidInput = document.querySelector('input[name="UID"]');
-            if (uidInput) uid = uidInput.value;
-        }
+        // 2. СПРОБА ЗНАЙТИ ДАНІ НА ПОТОЧНІЙ СТОРІНЦІ (Щоб уникнути довгого fetch)
+        let currentDocCreds = extractCredentials(document);
+        if (currentDocCreds.contract) result.contract = currentDocCreds.contract;
+        if (currentDocCreds.password) result.password = currentDocCreds.password;
 
-        if (uid) {
-            let fetchUrl = `/admin/index.cgi?qindex=15&header=2&UID=${uid}&SHOW_PASSWORD=1&IN_MODAL=1`;
-            let response = await fetch(fetchUrl);
-            let htmlText = await response.text();
+        // ОПТИМІЗАЦІЯ 4: Робимо повільний мережевий запит (fetch) ТІЛЬКИ якщо чогось не вистачає
+        let needFetch = (result.contract === '11500xxxxx' || result.password === 'xxxxx' || !result.credit);
 
-            let parser = new DOMParser();
-            let doc = parser.parseFromString(htmlText, 'text/html');
-
-            // 2. Якщо кредит не знайшли на активній сторінці, шукаємо у фоновому профілі
-            if (!result.credit) {
-                result.credit = getAmount(doc);
+        if (needFetch) {
+            let uid = null;
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('UID')) uid = urlParams.get('UID');
+            if (!uid) {
+                let uidInput = document.querySelector('input[name="UID"]');
+                if (uidInput) uid = uidInput.value;
             }
 
-            let allButtons = doc.querySelectorAll('button, a');
-            for (let btn of allButtons) {
-                let onclick = btn.getAttribute('onclick') || '';
-                if (onclick.includes('copyToBuffer')) {
-                    let match = onclick.match(/copyToBuffer\(['"]([^'"]+)['"]\)/);
-                    if (match && match[1]) {
-                        let extractedValue = match[1];
-                        let btnText = (btn.innerText || btn.title || '').toLowerCase();
-                        
-                        if (btnText.includes('контракт') || btnText.includes('договір') || btnText.includes('договор') || btnText.includes('contract')) {
-                            result.contract = extractedValue;
-                        } else if (btnText.includes('пароль') || btnText.includes('password') || btnText.includes('pass')) {
-                            result.password = extractedValue;
-                        }
-                    }
-                }
-            }
+            if (uid) {
+                let fetchUrl = `/admin/index.cgi?qindex=15&header=2&UID=${uid}&SHOW_PASSWORD=1&IN_MODAL=1`;
+                let response = await fetch(fetchUrl);
+                let htmlText = await response.text();
 
-            if (result.contract === '11500xxxxx') {
-                let contractInput = doc.querySelector('input[name="CONTRACT"], input[id="CONTRACT"], .contract_template_value');
-                if (contractInput && contractInput.value) result.contract = contractInput.value;
-            }
-            if (result.password === 'xxxxx') {
-                let passInput = doc.querySelector('input[name="PASSWORD"], input[id="PASSWORD"], input[name="PASS"]');
-                if (passInput && passInput.value) result.password = passInput.value;
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(htmlText, 'text/html');
+
+                if (!result.credit) result.credit = getAmount(doc);
+
+                let fetchedCreds = extractCredentials(doc);
+                if (result.contract === '11500xxxxx' && fetchedCreds.contract) result.contract = fetchedCreds.contract;
+                if (result.password === 'xxxxx' && fetchedCreds.password) result.password = fetchedCreds.password;
             }
         }
     } catch (e) { console.error("Помилка парсингу:", e); }
