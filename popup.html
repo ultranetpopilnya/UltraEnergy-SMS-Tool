@@ -16,7 +16,7 @@
     --bg-color: #f9f8f6;
     --text-color: #333;
     --header-color: #444;
-    --subtitle-color: #666;
+    --subtitle-color: #444;
     --primary-accent-color: #007bff;
     --success-color: #38c172;
     --danger-color: rgb(191, 26, 26);
@@ -116,7 +116,7 @@
     --bg-color: #1a1a1a;
     --text-color: #e0e0e0;
     --header-color: #ffffff;
-    --subtitle-color: #aaa;
+    --subtitle-color: #ffffff;
     --primary-accent-color: #3b82f6; 
     --input-bg-color: #2d2d2d;
     --input-border-color: #444;
@@ -235,6 +235,15 @@ select {
 [data-theme="dark"] select {
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e0e0e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
 }
+
+.version-footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--subtitle-color);
+    margin-top: 15px;
+    opacity: 0.8;
+    font-weight: 600;
+}
     </style>
 </head>
 <body data-theme="light">
@@ -274,7 +283,6 @@ select {
             <div class="title-container">
                 <h3 id="mainTitle">UltraEnergy SMS Tool</h3>
                 <div id="subTitle"></div>
-                <div id="appVersion" class="subtitle-text"></div>
             </div>
             
             <div class="header-icons">
@@ -310,6 +318,7 @@ select {
         <button class="btn" id="sendBtn">Відправити SMS</button>
         
         <div class="warning-text">Це тестове розширення! Перевіряйте дані абонента перед відправкою смс!</div>
+        <div id="appVersion" class="version-footer"></div>
     </div>
 
     <!-- ЕКРАН НАЛАШТУВАНЬ -->

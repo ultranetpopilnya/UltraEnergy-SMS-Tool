@@ -148,42 +148,81 @@ async function scrapeAbillsData() {
     try {
         result.credit = getAmount(document);
 
-        // ВИПРАВЛЕННЯ: Повертаємо innerText, щоб читати ТІЛЬКИ видимі номери, як бачить користувач
-        let bodyText = document.body.innerText || "";
-        let phoneRegex = /(?:\+?38)?[\s\(]*0\d{2}[\s\)]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/g;
-        let matches = bodyText.match(phoneRegex);
-        if (matches) {
-            matches.forEach(m => {
-                let clean = m.replace(/\D/g, ''); 
-                if (clean.length === 10) phoneSet.add('38' + clean);
-                if (clean.length === 12) phoneSet.add(clean);
+        // === ПОКРАЩЕНА СТРОГА ФУНКЦІЯ ПОШУКУ ТЕЛЕФОНІВ ===
+        const extractPhones = (docToSearch) => {
+            let localPhoneSet = new Set();
+            
+            // Регулярка шукає блоки, що схожі на номери (дозволяє дужки, пробіли, дефіси)
+            let phoneRegex = /(?:\+?38)?[\s\-\(]*0\d[\s\-\(\)]*(?:\d[\s\-\(\)]*){7,8}\d/g;
+
+            // Допоміжна функція: очищає і строго валідує номер
+            const processAndAddPhone = (rawStr) => {
+                if (!rawStr) return;
+                let clean = rawStr.replace(/\D/g, ''); // Залишаємо тільки цифри
+                
+                // Приводимо до стандарту 380...
+                let normalized = "";
+                if (clean.length === 10 && clean.startsWith('0')) {
+                    normalized = '38' + clean;
+                } else if (clean.length === 12 && clean.startsWith('380')) {
+                    normalized = clean;
+                }
+
+                // СТРОГА ПЕРЕВІРКА: Валідація українських кодів операторів
+                // (Київстар, Vodafone, Lifecell, Інтертелеком, Тримоб)
+                let validUaPhoneRegex = /^380(39|50|63|66|67|68|73|89|91|92|93|94|95|96|97|98|99)\d{7}$/;
+
+                if (normalized && validUaPhoneRegex.test(normalized)) {
+                    localPhoneSet.add(normalized);
+                }
+            };
+
+            // Допоміжна функція: "витягує" всі номери з довгого тексту
+            const extractFromText = (text) => {
+                if (!text || typeof text !== 'string') return;
+                let matches = text.match(phoneRegex);
+                if (matches) {
+                    matches.forEach(m => processAndAddPhone(m));
+                }
+                // ПРИБРАНО БЛОК ELSE: тепер ми не намагаємося "видушити" цифри з усього тексту сторінки, 
+                // якщо там немає послідовності, схожої на номер телефону.
+            };
+
+            // ТАРГЕТ 1: Усі поля вводу (input) ТА ВЕЛИКІ ТЕКСТОВІ ПОЛЯ (textarea)
+            let inputsAndTextareas = docToSearch.querySelectorAll('input:not([type="hidden"]), textarea');
+            inputsAndTextareas.forEach(el => {
+                extractFromText(el.value);
+                if (el.placeholder) extractFromText(el.placeholder);
             });
-        }
 
-        // ВИПРАВЛЕННЯ: Ігноруємо приховані системні поля (type="hidden")
-        let allInputs = document.querySelectorAll('input:not([type="hidden"])');
-        for (let input of allInputs) {
-            let val = input.value || '';
-            let clean = val.replace(/\D/g, '');
-            if (clean.length === 10 && clean.startsWith('0')) phoneSet.add('38' + clean);
-            if (clean.length === 12 && clean.startsWith('380')) phoneSet.add(clean);
-        }
-        result.phones = Array.from(phoneSet); 
+            // ТАРГЕТ 2: Коментарі абонента (блоки timeline-item)
+            let timelineItems = docToSearch.querySelectorAll('.timeline-item');
+            timelineItems.forEach(item => extractFromText(item.innerText));
 
-        // СПРОБА ЗНАЙТИ ДАНІ НА ПОТОЧНІЙ СТОРІНЦІ
+            // ТАРГЕТ 3: Глобальний текст всієї сторінки
+            let bodyText = docToSearch.body ? docToSearch.body.innerText : '';
+            extractFromText(bodyText);
+
+            return Array.from(localPhoneSet);
+        };
+
+        // Запускаємо пошук телефонів по поточній сторінці
+        result.phones = extractPhones(document);
+
+        // СПРОБА ЗНАЙТИ ДОГОВІР ТА ПАРОЛЬ НА ПОТОЧНІЙ СТОРІНЦІ
         let currentDocCreds = extractCredentials(document);
         if (currentDocCreds.contract) result.contract = currentDocCreds.contract;
         if (currentDocCreds.password) result.password = currentDocCreds.password;
 
         // РОБИМО ФОНОВИЙ ЗАПИТ ТІЛЬКИ ЯКЩО ЧОГОСЬ НЕ ВИСТАЧАЄ
-        let needFetch = (result.contract === '11500xxxxx' || result.password === 'xxxxx' || !result.credit);
+        let needFetch = (result.contract === '11500xxxxx' || result.password === 'xxxxx' || !result.credit || result.phones.length === 0);
 
         if (needFetch) {
             let uid = null;
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('UID')) uid = urlParams.get('UID');
             if (!uid) {
-                let uidInput = document.querySelector('input[name="UID"]');
+                let uidInput = document.querySelector('input[name="UID"], input[name="uid"], input[id="UID"]');
                 if (uidInput) uid = uidInput.value;
             }
 
@@ -200,6 +239,12 @@ async function scrapeAbillsData() {
                 let fetchedCreds = extractCredentials(doc);
                 if (result.contract === '11500xxxxx' && fetchedCreds.contract) result.contract = fetchedCreds.contract;
                 if (result.password === 'xxxxx' && fetchedCreds.password) result.password = fetchedCreds.password;
+                
+                // Збираємо номери з фонової сторінки і додаємо до існуючих (без дублікатів)
+                let backgroundPhones = extractPhones(doc);
+                if (backgroundPhones.length > 0) {
+                    result.phones = [...new Set([...result.phones, ...backgroundPhones])];
+                }
             }
         }
     } catch (e) { console.error("Помилка парсингу:", e); }
@@ -333,7 +378,6 @@ function runAutoParse() {
         
         let currentTab = tabs[0];
         let subTitle = document.getElementById('subTitle');
-        let appVersion = document.getElementById('appVersion');
         
         // 1. ВИЗНАЧАЄМО МЕРЕЖУ ЛИШЕ ПО ДОМЕНУ
         if (currentTab.url.includes('bill.ultranetgroup.com.ua')) {
@@ -343,25 +387,41 @@ function runAutoParse() {
         } else {
             currentNetwork = null;
             subTitle.style.display = 'none';
-            appVersion.style.display = 'block';
             showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
             return;
         }
 
-        // 2. ПЕРЕВІРЯЄМО, ЧИ ЦЕ САМЕ КАРТКА АБОНЕНТА (ABillS використовує index=15 / qindex=15 для карток)
+        // 2. ПЕРЕВІРЯЄМО, ЧИ ЦЕ САМЕ КАРТКА АБОНЕНТА (Орієнтуємося на вміст сторінки, а не на URL)
         chrome.scripting.executeScript({
             target: { tabId: currentTab.id },
             func: () => {
-                // Картка абонента завжди має UID в URL і модуль з номером 15
-                let hasUid = window.location.search.includes('UID=') || window.location.search.includes('uid=');
-                let isCardIndex = window.location.search.includes('qindex=15') || window.location.search.includes('index=15');
+                // 1. Чи є UID в адресному рядку (прямий перехід)
+                let hasUidInUrl = window.location.search.includes('UID=') || window.location.search.includes('uid=');
                 
-                let isSubscriberCard = hasUid && isCardIndex;
+                // 2. Чи є UID всередині сторінки (відкриття через пошук)
+                let hasContextUid = false;
+                let uidInputs = document.querySelectorAll('input[name="UID"], input[name="uid"], input[id="UID"]');
+                for (let input of uidInputs) {
+                    // Якщо поле існує і в ньому є текст (ігноруємо пусті поля пошуку)
+                    if (input.value && input.value.trim() !== '') {
+                        hasContextUid = true;
+                        break;
+                    }
+                }
+
+                // 3. Чи є на екрані елементи, які бувають ТІЛЬКИ в картці абонента
+                // (Поля "Кредит", "Договір", "Депозит" або кнопки копіювання пароля)
+                let profileIndicators = document.querySelectorAll('input[name="CREDIT"], input[name="DEPOSIT"], input[name="CONTRACT"], [onclick*="copyToBuffer"]');
+                let hasProfileElements = profileIndicators.length > 0;
+
+                // КАРТКА ВІДКРИТА: Якщо ми маємо ідентифікатор абонента І бачимо його поля
+                let isSubscriberCard = (hasUidInUrl || hasContextUid) && hasProfileElements;
 
                 let isReloaded = !window.__sms_ext_marker;
                 if (isReloaded) {
                     window.__sms_ext_marker = 'marker_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
                 }
+                
                 return { 
                     isReloaded: isReloaded, 
                     marker: window.__sms_ext_marker,
@@ -376,7 +436,6 @@ function runAutoParse() {
             // ЯКЩО ЦЕ НЕ КАРТКА АБОНЕНТА (головна сторінка, звіти тощо) - ЗУПИНЯЄМОСЬ
             if (!pageInfo.isSubscriberCard) {
                 subTitle.style.display = 'none';
-                appVersion.style.display = 'block';
                 showButtonStatus('sendBtn', 'Відкрийте картку абонента!', 'error');
                 
                 // Очищаємо поля, щоб не "висіли" дані попереднього абонента
@@ -395,18 +454,15 @@ function runAutoParse() {
             subTitle.style.display = 'none';
             subTitle.className = '';
             subTitle.innerText = '';
-            appVersion.style.display = 'block';
             
             if (currentNetwork === 'ultra') {
                 subTitle.innerText = 'Відправити SMS Ultranet';
                 subTitle.className = 'ultra-color subtitle-text'; 
                 subTitle.style.display = 'block';
-                appVersion.style.display = 'none';
             } else if (currentNetwork === 'energy') {
                 subTitle.innerText = 'Відправити SMS ISP Energy';
                 subTitle.className = 'energy-color subtitle-text'; 
                 subTitle.style.display = 'block';
-                appVersion.style.display = 'none';
             }
 
             // Завантажуємо шаблони для обраної мережі
