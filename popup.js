@@ -99,7 +99,6 @@ const isSidePanel = window.location.search.includes('panel=1');
 
 async function scrapeAbillsData() {
     let result = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
-    let phoneSet = new Set(); 
 
     // Функція пошуку суми кредиту
     const getAmount = (doc) => {
@@ -170,7 +169,7 @@ async function scrapeAbillsData() {
 
                 // СТРОГА ПЕРЕВІРКА: Валідація українських кодів операторів
                 // (Київстар, Vodafone, Lifecell, Інтертелеком, Тримоб)
-                let validUaPhoneRegex = /^380(39|50|63|66|67|68|73|89|91|92|93|94|95|96|97|98|99)\d{7}$/;
+                let validUaPhoneRegex = /^380(39|50|63|66|67|68|73|75|77|89|91|92|93|94|95|96|97|98|99)\d{7}$/;
 
                 if (normalized && validUaPhoneRegex.test(normalized)) {
                     localPhoneSet.add(normalized);
@@ -276,24 +275,15 @@ function updatePreview() {
 }
 
 function loadSettings() {
-    try {
-        if (chrome && chrome.storage && chrome.storage.local) {
-            // Прибрали 'theme' звідси
-            chrome.storage.local.get(['ultraToken', 'energyToken', 'autoClose'], (data) => {
-                if (data.ultraToken) creds.ultra.token = data.ultraToken;
-                if (data.energyToken) creds.energy.token = data.energyToken;
-                
-                if (data.autoClose !== undefined) {
-                    autoCloseEnabled = data.autoClose;
-                } else {
-                    autoCloseEnabled = true; 
-                }
-                
-                let toggle = document.getElementById('autoCloseToggle');
-                if (toggle) toggle.checked = autoCloseEnabled;
-            });
-        }
-    } catch (e) { console.error("Помилка пам'яті: ", e); }
+    chrome.storage.local.get(['ultraToken', 'energyToken', 'autoClose'], (data) => {
+        if (data.ultraToken) creds.ultra.token = data.ultraToken;
+        if (data.energyToken) creds.energy.token = data.energyToken;
+        
+        autoCloseEnabled = data.autoClose !== undefined ? data.autoClose : true;
+        
+        let toggle = document.getElementById('autoCloseToggle');
+        if (toggle) toggle.checked = autoCloseEnabled;
+    });
 }
 
 async function loadTemplatesFromFile(network) {
@@ -722,7 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
             body: JSON.stringify({ "recipients": [phone], "sms": { "sender": currentSender, "text": text } })
         })
-        .then(async response => {
+        .then(response => {
             // Перевіряємо, чи це взагалі JSON, перед тим як парсити
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.indexOf("application/json") !== -1) {
