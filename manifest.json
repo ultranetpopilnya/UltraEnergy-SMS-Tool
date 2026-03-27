@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "UltraEnergy SMS Tool",
-  "version": "2.0.15",
+  "version": "2.0.17",
   "description": "Відправка SMS абонентам Ultranet та ISP Energy",
   "permissions": [
     "activeTab",

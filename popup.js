@@ -328,67 +328,104 @@ function runAutoParse() {
 
     let queryOptions = isSidePanel ? { active: true, lastFocusedWindow: true } : { active: true, currentWindow: true };
     
-    chrome.tabs.query(queryOptions, async (tabs) => {
+    chrome.tabs.query(queryOptions, (tabs) => {
         if (!tabs || tabs.length === 0) return;
         
         let currentTab = tabs[0];
         let subTitle = document.getElementById('subTitle');
         let appVersion = document.getElementById('appVersion');
         
-        subTitle.style.display = 'none';
-        subTitle.className = '';
-        subTitle.innerText = '';
-        appVersion.style.display = 'block';
-        
+        // 1. ВИЗНАЧАЄМО МЕРЕЖУ ЛИШЕ ПО ДОМЕНУ
         if (currentTab.url.includes('bill.ultranetgroup.com.ua')) {
             currentNetwork = 'ultra';
-            subTitle.innerText = 'Відправити SMS Ultranet';
-            subTitle.className = 'ultra-color subtitle-text'; 
-            subTitle.style.display = 'block';
-            appVersion.style.display = 'none';
         } else if (currentTab.url.includes('bill.ispenergy.com.ua')) {
             currentNetwork = 'energy';
-            subTitle.innerText = 'Відправити SMS ISP Energy';
-            subTitle.className = 'energy-color subtitle-text'; 
-            subTitle.style.display = 'block';
-            appVersion.style.display = 'none';
         } else {
             currentNetwork = null;
-            showButtonStatus('sendBtn', 'Відкрийте картку абонента в ABillS!', 'error');
+            subTitle.style.display = 'none';
+            appVersion.style.display = 'block';
+            showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
             return;
         }
 
-        await loadTemplatesFromFile(currentNetwork);
-
-        // Перевіряємо унікальну мітку саме цієї вкладки
+        // 2. ПЕРЕВІРЯЄМО, ЧИ ЦЕ САМЕ КАРТКА АБОНЕНТА (ABillS використовує index=15 / qindex=15 для карток)
         chrome.scripting.executeScript({
             target: { tabId: currentTab.id },
             func: () => {
+                // Картка абонента завжди має UID в URL і модуль з номером 15
+                let hasUid = window.location.search.includes('UID=') || window.location.search.includes('uid=');
+                let isCardIndex = window.location.search.includes('qindex=15') || window.location.search.includes('index=15');
+                
+                let isSubscriberCard = hasUid && isCardIndex;
+
                 let isReloaded = !window.__sms_ext_marker;
                 if (isReloaded) {
-                    // Генеруємо унікальний маркер для сторінки
                     window.__sms_ext_marker = 'marker_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
                 }
-                return { isReloaded: isReloaded, marker: window.__sms_ext_marker };
+                return { 
+                    isReloaded: isReloaded, 
+                    marker: window.__sms_ext_marker,
+                    isSubscriberCard: isSubscriberCard 
+                };
             }
-        }, (markerResults) => {
+        }, async (markerResults) => {
             if (!markerResults || !markerResults[0]) return;
             
             let pageInfo = markerResults[0].result;
+
+            // ЯКЩО ЦЕ НЕ КАРТКА АБОНЕНТА (головна сторінка, звіти тощо) - ЗУПИНЯЄМОСЬ
+            if (!pageInfo.isSubscriberCard) {
+                subTitle.style.display = 'none';
+                appVersion.style.display = 'block';
+                showButtonStatus('sendBtn', 'Відкрийте картку абонента!', 'error');
+                
+                // Очищаємо поля, щоб не "висіли" дані попереднього абонента
+                document.getElementById('phone').value = '';
+                document.getElementById('amount').value = '';
+                document.getElementById('message').value = '';
+                let wrapper = document.getElementById('multiPhoneWrapper');
+                if (wrapper) wrapper.style.display = 'none';
+                
+                return; // Зупиняємо виконання функції
+            }
+
+            // === ЯКЩО МИ ТУТ - ЗНАЧИТЬ ВІДКРИТА КАРТКА АБОНЕНТА ===
+
+            // Малюємо відповідні заголовки
+            subTitle.style.display = 'none';
+            subTitle.className = '';
+            subTitle.innerText = '';
+            appVersion.style.display = 'block';
+            
+            if (currentNetwork === 'ultra') {
+                subTitle.innerText = 'Відправити SMS Ultranet';
+                subTitle.className = 'ultra-color subtitle-text'; 
+                subTitle.style.display = 'block';
+                appVersion.style.display = 'none';
+            } else if (currentNetwork === 'energy') {
+                subTitle.innerText = 'Відправити SMS ISP Energy';
+                subTitle.className = 'energy-color subtitle-text'; 
+                subTitle.style.display = 'block';
+                appVersion.style.display = 'none';
+            }
+
+            // Завантажуємо шаблони для обраної мережі
+            await loadTemplatesFromFile(currentNetwork);
+
             currentPageMarker = pageInfo.marker;
 
-            // Шукаємо цього абонента в пам'яті
+            // Шукаємо цього абонента в пам'яті (Кеш)
             chrome.storage.session.get(['subscribersCache'], (storage) => {
                 let cache = storage.subscribersCache || {};
                 let cachedState = cache[currentPageMarker];
 
-                // Якщо сторінка НЕ оновлювалась (не було F5) і дані для неї є в кеші
+                // Якщо сторінка НЕ оновлювалась і дані є в кеші
                 if (!pageInfo.isReloaded && cachedState) {
                     restoreStateFromCache(cachedState);
-                    return; // Зупиняємо виконання, парсинг не потрібен
+                    return; 
                 }
 
-                // === ЯКЩО МИ ТУТ - ЦЕ НОВА ВКЛАДКА АБО НАТИСНУТО F5 ===
+                // === ПАРСИНГ НОВОГО АБОНЕНТА ===
                 extractedData = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
                 document.getElementById('phone').value = '';
                 document.getElementById('amount').value = '';
@@ -415,18 +452,13 @@ function runAutoParse() {
                         if (extractedData.credit) document.getElementById('amount').value = extractedData.credit;
 
                         let phoneInput = document.getElementById('phone');
-                        let phoneSelector = document.getElementById('phoneSelector');
-
                         if (extractedData.phones.length > 0) phoneInput.value = extractedData.phones[0];
 
-                        // МАЛЮЄМО КНОПКИ ЗАМІСТЬ СТАРОГО СЕЛЕКТОРА
+                        // МАЛЮЄМО КНОПКИ ВИБОРУ НОМЕРІВ
                         renderPhoneSelector(extractedData.phones);
 
                         updatePreview();
-                        saveStateToCache();
-
-                        updatePreview();
-                        saveStateToCache(); // Зберігаємо нові дані в кеш (як одного з 10 абонентів)
+                        saveStateToCache(); // Зберігаємо в кеш
                     }
                 });
             });
