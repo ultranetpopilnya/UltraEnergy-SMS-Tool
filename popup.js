@@ -113,11 +113,10 @@ async function scrapeAbillsData() {
         return '';
     };
 
-    // ОПТИМІЗАЦІЯ 1: Виносимо логіку пошуку пароля/договору в окрему функцію для перевикористання
+    // Швидка функція пошуку пароля/договору
     const extractCredentials = (docToSearch) => {
         let creds = { contract: null, password: null };
         
-        // ОПТИМІЗАЦІЯ 2: Використовуємо швидкий CSS-селектор замість перебору ВСІХ кнопок
         let copyElements = docToSearch.querySelectorAll('[onclick*="copyToBuffer"]');
         for (let btn of copyElements) {
             let onclick = btn.getAttribute('onclick');
@@ -134,7 +133,6 @@ async function scrapeAbillsData() {
             }
         }
 
-        // Запасний варіант пошуку в інпутах
         if (!creds.contract) {
             let contractInput = docToSearch.querySelector('input[name="CONTRACT"], input[id="CONTRACT"], .contract_template_value');
             if (contractInput && contractInput.value) creds.contract = contractInput.value;
@@ -148,11 +146,10 @@ async function scrapeAbillsData() {
     };
 
     try {
-        // 1. Шукаємо кредит на поточній сторінці
         result.credit = getAmount(document);
 
-        // ОПТИМІЗАЦІЯ 3: Використовуємо textContent замість innerText (працює в рази швидше, бо не рендерить CSS)
-        let bodyText = document.body.textContent || "";
+        // ВИПРАВЛЕННЯ: Повертаємо innerText, щоб читати ТІЛЬКИ видимі номери, як бачить користувач
+        let bodyText = document.body.innerText || "";
         let phoneRegex = /(?:\+?38)?[\s\(]*0\d{2}[\s\)]*\d{3}[\s-]*\d{2}[\s-]*\d{2}/g;
         let matches = bodyText.match(phoneRegex);
         if (matches) {
@@ -163,7 +160,8 @@ async function scrapeAbillsData() {
             });
         }
 
-        let allInputs = document.querySelectorAll('input');
+        // ВИПРАВЛЕННЯ: Ігноруємо приховані системні поля (type="hidden")
+        let allInputs = document.querySelectorAll('input:not([type="hidden"])');
         for (let input of allInputs) {
             let val = input.value || '';
             let clean = val.replace(/\D/g, '');
@@ -172,12 +170,12 @@ async function scrapeAbillsData() {
         }
         result.phones = Array.from(phoneSet); 
 
-        // 2. СПРОБА ЗНАЙТИ ДАНІ НА ПОТОЧНІЙ СТОРІНЦІ (Щоб уникнути довгого fetch)
+        // СПРОБА ЗНАЙТИ ДАНІ НА ПОТОЧНІЙ СТОРІНЦІ
         let currentDocCreds = extractCredentials(document);
         if (currentDocCreds.contract) result.contract = currentDocCreds.contract;
         if (currentDocCreds.password) result.password = currentDocCreds.password;
 
-        // ОПТИМІЗАЦІЯ 4: Робимо повільний мережевий запит (fetch) ТІЛЬКИ якщо чогось не вистачає
+        // РОБИМО ФОНОВИЙ ЗАПИТ ТІЛЬКИ ЯКЩО ЧОГОСЬ НЕ ВИСТАЧАЄ
         let needFetch = (result.contract === '11500xxxxx' || result.password === 'xxxxx' || !result.credit);
 
         if (needFetch) {
