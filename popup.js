@@ -375,11 +375,14 @@ function runAutoParse() {
         } else if (currentTab.url.includes('bill.ispenergy.com.ua')) {
             currentNetwork = 'energy';
         } else {
-            currentNetwork = null;
-            subTitle.style.display = 'none';
-            showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
-            return;
-        }
+    currentNetwork = null;
+    // ✅ ЗАМІНИТИ subTitle.style.display = 'none'; НА:
+    subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
+    subTitle.className = 'subtitle-text';
+    subTitle.style.display = 'block';
+    showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
+    return;
+}
 
         // 2. ПЕРЕВІРЯЄМО, ЧИ ЦЕ САМЕ КАРТКА АБОНЕНТА (Орієнтуємося на вміст сторінки, а не на URL)
         chrome.scripting.executeScript({
@@ -425,8 +428,10 @@ function runAutoParse() {
 
             // ЯКЩО ЦЕ НЕ КАРТКА АБОНЕНТА (головна сторінка, звіти тощо) - ЗУПИНЯЄМОСЬ
             if (!pageInfo.isSubscriberCard) {
-                subTitle.style.display = 'none';
-                showButtonStatus('sendBtn', 'Відкрийте картку абонента!', 'error');
+    subTitle.innerText = 'Перевіряйте дані перед відправкою смс!';
+    subTitle.className = 'subtitle-text';
+    subTitle.style.display = 'block';
+    showButtonStatus('sendBtn', 'Відкрийте картку абонента!', 'error');
                 
                 // Очищаємо поля, щоб не "висіли" дані попереднього абонента
                 document.getElementById('phone').value = '';
@@ -520,7 +525,7 @@ function checkAuthAndParse() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const manifestData = chrome.runtime.getManifest();
-    document.getElementById('appVersion').innerText = `Версія: ${manifestData.version}`;
+    document.getElementById('app-version').innerText = manifestData.version;
 
     // ДІСТАЄМО СТАТУС І ТЕМУ ОДНОЧАСНО
     chrome.storage.local.get(['isAuthorized', 'theme'], (data) => {
