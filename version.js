@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) {
         currentVersion = chrome.runtime.getManifest().version;
-        if (versionElement) versionElement.textContent = 'Версія: ' + currentVersion;
+        if (versionElement) versionElement.textContent = currentVersion;
 
         // Відновлюємо бейдж і банер якщо оновлення вже було знайдено раніше
         chrome.storage.local.get('pendingUpdate', (data) => {
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(r => r.json())
             .then(data => {
                 currentVersion = data.version;
-                if (versionElement) versionElement.textContent = '🔖 Версія: ' + currentVersion;
+                if (versionElement) versionElement.textContent = currentVersion;
                 startUpdateChecker(currentVersion);
             })
             .catch(err => {
