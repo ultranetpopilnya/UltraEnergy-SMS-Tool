@@ -41,7 +41,7 @@
             /* ВАЖЛИВО: Ховаємо горизонтальний скрол, щоб анімація не ламалася */
             overflow-x: hidden; 
             box-sizing: border-box; 
-            padding: 15px 15px 19px 15px; 
+            padding: 15px 15px 18px 15px; 
             font-family: 'Inter', Arial, sans-serif; 
             background-color: var(--bg-color); 
             color: var(--text-color); 
@@ -64,7 +64,7 @@
 .energy-color { color: var(--energy-color) !important; }
 
         /* ШАПКА */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--input-border-color); padding-bottom: 10px; min-height: 56px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--input-border-color); padding-bottom: 10px; min-height: 56px; }
         .title-container { display: flex; flex-direction: column; justify-content: center; height: 100%; }
         h3 { margin: 0; font-size: 17px; color: var(--header-color); font-weight: 700; }
         .subtitle-text { font-size: 12px; color: var(--subtitle-color); margin-top: 2px; font-weight: 600; }
@@ -83,7 +83,7 @@
         select { cursor: pointer; }
 
         /* КНОПКИ */
-        button.btn { width: 100%; height: 42px; padding: 0 10px; margin-top: 15px; background-color: var(--primary-accent-color); color: white; border: 1px solid transparent; border-radius: 9999px; cursor: pointer; font-weight: 600; font-size: 14px; font-family: 'Inter', Arial, sans-serif; transition: 0.2s ease-in-out; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        button.btn { width: 100%; height: 42px; padding: 0 10px; margin-top: 16px; background-color: var(--primary-accent-color); color: white; border: 1px solid transparent; border-radius: 9999px; cursor: pointer; font-weight: 600; font-size: 14px; font-family: 'Inter', Arial, sans-serif; transition: 0.2s ease-in-out; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         button:disabled { background-color: var(--btn-disabled-bg) !important; color: var(--subtitle-color); cursor: not-allowed; box-shadow: none; }
         
         button.btn-success, button.btn-success:disabled { background-color: rgba(56, 193, 114, 0.15) !important; border: 1px solid var(--success-color) !important; color: #20874b !important; cursor: default !important; }
@@ -92,11 +92,11 @@
 
         /* НАЛАШТУВАННЯ ТА РОЗДІЛЮВАЧІ */
         #settingsView { display: none; }
-        .network-title { margin: 15px 0 5px 0; font-size: 13px; padding-bottom: 5px; font-weight: 700; display: flex; align-items: center; gap: 2px; }
+        .network-title { margin: 16px 0 5px 0; font-size: 13px; padding-bottom: 2px; font-weight: 700; display: flex; align-items: center; gap: 2px; }
         .energy-color { color: var(--success-color); }
         .emoji-icon { font-weight: 400; font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif; }
         
-        .setting-divider { border: none; border-top: 1px solid var(--input-border-color); margin: 20px 0 15px 0; }
+        .setting-divider { border: none; border-top: 1px solid var(--input-border-color); margin: 17px 0 17px 0; }
         .setting-subtitle { font-size: 13px; font-weight: 700; color: var(--header-color); margin-bottom: 10px; }
 
 
@@ -427,7 +427,7 @@ select {
         </div>
         
         <!-- КНОПКА ЗБЕРЕГТИ -->
-        <button class="btn" id="saveSettingsBtn" style="margin-top: 25px;">Зберегти налаштування</button>
+        <button class="btn" id="saveSettingsBtn" style="margin-top: 17px;">Зберегти налаштування</button>
     </div>
 
     <script src="popup.js"></script>
