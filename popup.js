@@ -378,7 +378,7 @@ function runAutoParse() {
     currentNetwork = null;
     // ✅ ЗАМІНИТИ subTitle.style.display = 'none'; НА:
     subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
-    subTitle.className = 'subtitle-text';
+    subTitle.className = 'warning-text';
     subTitle.style.display = 'block';
     showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
     return;

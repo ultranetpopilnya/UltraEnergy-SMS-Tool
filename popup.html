@@ -23,6 +23,7 @@
     --input-bg-color: #fff;
     --input-border-color: #ccc;
     --input-focus-border-color: var(--primary-accent-color);
+    --warning-text: #e60000;
     
     /* Додані змінні для динамічної зміни */
     --scrollbar-thumb: #c1c1c1;
@@ -67,8 +68,8 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--input-border-color); padding-bottom: 10px; min-height: 56px; }
         .title-container { display: flex; flex-direction: column; justify-content: center; height: 100%; }
         h3 { margin: 0; font-size: 17px; color: var(--header-color); font-weight: 700; }
-        .subtitle-text { font-size: 12px; color: var(--subtitle-color); margin-top: 2px; font-weight: 600; }
-        #subTitle { font-size: 13px; font-weight: 700; margin-top: 4px; display: none; }
+        .subtitle-text { font-size: 13px; color: var(--subtitle-color); margin-top: 2px; font-weight: 600; }
+        .warning-text { font-size: 13px; font-weight: 700; margin-top: 2px; display: none; color: var(--warning-text);}
         
         .header-icons { display: flex; gap: 15px; align-items: center; }
         .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 0; color: #555; transition: 0.2s; }
@@ -119,6 +120,7 @@
     --input-bg-color: #2d2d2d;
     --input-border-color: #444;
     --danger-color: rgb(235, 151, 25);
+    --warning-text: #ff9100;
     
     --scrollbar-thumb: #555;
     --scrollbar-hover: #777;
