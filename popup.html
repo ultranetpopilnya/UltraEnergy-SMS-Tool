@@ -11,7 +11,7 @@
     
     <style>
         :root {
-    --gradient: #fff3e5;        
+    --gradient: #fff2e4;        
     --ultra-color: #811e71;
     --energy-color: #00a700;       
     --bg-color: #f9f8f6;
@@ -47,8 +47,6 @@
     
     /* Додаємо градієнт поверх основного кольору */
     background-color: var(--bg-color); 
-    background-image: linear-gradient(to top, var(--gradient) 0%, transparent 15%);
-    background-attachment: fixed; /* Щоб градієнт не "тікав" при скролі */
     
     color: var(--text-color); 
     margin: 0;
@@ -180,7 +178,7 @@
         }
 
         [data-theme="dark"] {
-    --gradient: #8f18ff1e; 
+    --gradient: #190030; 
     --ultra-color: #994a8c;
     --energy-color: #81ca42;
     --bg-color: #1a1a1a;
@@ -320,6 +318,13 @@ select {
     margin-bottom: 0px;
     z-index: 90;
     pointer-events: none;
+    
+    background: linear-gradient(
+    to bottom, 
+    transparent 0%,
+    transparent 20%,    
+    var(--gradient) 90% 
+);
 }
 
 /* Стандартна кнопка в футері (наприклад, кнопка "Зберегти" в налаштуваннях) */
@@ -428,7 +433,11 @@ select {
         </div>
         <label for="accessKey">Введіть ключ доступу:</label>
         <input type="password" id="accessKey" placeholder="Ваш ключ..." style="text-align: center; font-size: 13px; margin-bottom: 10px;">
-        <button class="btn" id="loginBtn">Увійти</button>
+        
+        <!-- ДОДАНО ОБГОРТКУ STICKY-FOOTER -->
+        <div class="sticky-footer">
+            <button class="btn" id="loginBtn" style="width: calc(100% - 32px) !important;">Увійти</button>
+        </div>
     </div>
 
     <!-- ЕКРАН ПЕРШОГО ЗАПУСКУ -->
@@ -445,7 +454,10 @@ select {
         <div class="network-title energy-color"><span class="emoji-icon">🟢</span> ISP Energy</div>
         <input type="password" id="onboardEnergyToken" placeholder="Введіть токен ISP Energy...">
 
-        <button class="btn" id="onboardSaveBtn">Зберегти та почати</button>
+        <!-- ДОДАНО ОБГОРТКУ STICKY-FOOTER -->
+        <div class="sticky-footer">
+            <button class="btn" id="onboardSaveBtn" style="width: calc(100% - 32px) !important;">Зберегти та почати</button>
+        </div>
     </div>
 
     <!-- ОСНОВНИЙ ЕКРАН -->
