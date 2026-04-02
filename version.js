@@ -25,7 +25,7 @@ function showUpdateBanner(newVersion) {
 
     if (bannerVersion) bannerVersion.textContent = newVersion;
 
-    // Вмикаємо неонову кнопку (як під час тесту "up" в popup.js)
+    // Вмикаємо неонову кнопку
     vBtn.classList.add('has-update');
     vBtn.title = "Завантажити оновлення!";
     vBtn.href = DOWNLOAD_URL;
@@ -33,10 +33,11 @@ function showUpdateBanner(newVersion) {
 
     if (updateText) updateText.style.display = 'flex';
 
-    // Зберігаємо інфу та вішаємо бейдж на іконку розширення
-    chrome.storage.local.set({ pendingUpdate: newVersion });
-    chrome.action.setBadgeText({ text: '1' });
-    chrome.action.setBadgeBackgroundColor({ color: [129, 30, 113, 255] });
+    if (typeof chrome !== 'undefined' && chrome.action) {
+        chrome.storage.local.set({ pendingUpdate: newVersion });
+        chrome.action.setBadgeText({ text: '1' });
+        chrome.action.setBadgeBackgroundColor({ color: [129, 30, 113, 255] });
+    }
 }
 
 // Приховуємо оновлення, якщо версія вже актуальна
@@ -53,8 +54,10 @@ function hideUpdateBanner(currentVersion) {
 
     if (updateText) updateText.style.display = 'none';
 
-    chrome.storage.local.remove('pendingUpdate');
-    chrome.action.setBadgeText({ text: '' });
+    if (typeof chrome !== 'undefined' && chrome.action) {
+        chrome.storage.local.remove('pendingUpdate');
+        chrome.action.setBadgeText({ text: '' });
+    }
 }
 
 // Запит до GitHub і порівняння версій
@@ -66,11 +69,15 @@ async function checkForUpdate(currentVersion) {
         const data = await res.json();
         const remoteVersion = data.version;
 
+        // ОНОВЛЮЄМО НОМЕР ВЕРСІЇ В HTML (якщо елемент існує)
+        const versionElement = document.getElementById('appVersion');
+        if (versionElement) {
+            versionElement.textContent = remoteVersion;
+        }
+
         if (remoteVersion && isNewerVersion(remoteVersion, currentVersion)) {
-            // Є нова версія — показуємо банер
             showUpdateBanner(remoteVersion);
         } else {
-            // Нової версії немає — чистимо
             hideUpdateBanner(currentVersion);
         }
     } catch (e) {
@@ -80,11 +87,15 @@ async function checkForUpdate(currentVersion) {
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentVersion = '0.0.0';
+    const versionElement = document.getElementById('appVersion');
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getManifest) {
+        // === ЛОГІКА ДЛЯ POPUP РОЗШИРЕННЯ ===
         currentVersion = chrome.runtime.getManifest().version;
+        
+        // Відразу прописуємо локальну версію
+        if (versionElement) versionElement.textContent = currentVersion;
 
-        // Спочатку миттєво перевіряємо чи є збережене оновлення в пам'яті (щоб не чекати запиту до Github)
         chrome.storage.local.get('pendingUpdate', (data) => {
             if (data.pendingUpdate && isNewerVersion(data.pendingUpdate, currentVersion)) {
                 showUpdateBanner(data.pendingUpdate);
@@ -93,17 +104,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Запускаємо перевірку актуальності ОДИН РАЗ при відкритті popup
         checkForUpdate(currentVersion);
 
     } else {
-        // Локальне відкриття (подвійний клік по файлу) - чисто для тестування в браузері
-        fetch('manifest.json')
+        // === ЛОГІКА ДЛЯ ЗОВНІШНЬОЇ ВЕБ-СТОРІНКИ ===
+        // Беремо версію прямо з Github
+        fetch(MANIFEST_URL + '?_=' + Date.now())
             .then(r => r.json())
             .then(data => {
                 currentVersion = data.version;
-                checkForUpdate(currentVersion);
+                if (versionElement) versionElement.textContent = currentVersion;
             })
-            .catch(err => console.error('Не вдалося отримати версію:', err));
+            .catch(err => {
+                console.error('Не вдалося отримати версію:', err);
+                if (versionElement) versionElement.textContent = "Помилка";
+            });
     }
 });
