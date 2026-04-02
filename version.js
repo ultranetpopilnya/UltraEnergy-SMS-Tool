@@ -1,6 +1,4 @@
-// === УВАГА: Перевірте чи правильні посилання! ===
-// Зараз manifest береться з "ultraenergy-sms-test", а архів з "UltraEnergy-SMS-Tool"
-const MANIFEST_URL = 'https://raw.githubusercontent.com/ultranetpopilnya/ultraenergy-sms-test/refs/heads/main/manifest.json';
+const MANIFEST_URL = 'https://raw.githubusercontent.com/ultranetpopilnya/UltraEnergy-SMS-Tool/refs/heads/main/manifest.json';
 const DOWNLOAD_URL = 'https://github.com/ultranetpopilnya/UltraEnergy-SMS-Tool/archive/refs/heads/main.zip';
 
 // Порівняння версій "1.2.3" > "1.1.0" → true
