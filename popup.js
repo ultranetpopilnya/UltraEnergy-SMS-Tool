@@ -95,6 +95,7 @@ let currentNetwork = null;
 let loadedTemplates = []; 
 let extractedData = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
 let autoCloseEnabled = true;
+let savedSmsPrice = 1.29;
 const isSidePanel = window.location.search.includes('panel=1');
 
 async function scrapeAbillsData() {
@@ -251,15 +252,109 @@ async function scrapeAbillsData() {
     return result;
 }
 
+// === ФУНКЦІЯ ПІДРАХУНКУ СИМВОЛІВ ТА ЧАСТИН SMS (ЛОГІКА TURBOSMS) ===
+function updateSmsCounter() {
+    const textEl = document.getElementById('message');
+    if (!textEl) return;
+    
+    const text = textEl.value || '';
+    
+    // 1. Проста і надійна перевірка на кирилицю (будь-який символ, якого немає в англійській розкладці)
+    const isUnicode = /[^\x00-\x7F]/.test(text);
+
+    // 2. Підрахунок "ваги" символів
+    let calcLength = 0;
+    if (isUnicode) {
+        // У кирилиці кожен символ важить рівно 1
+        calcLength = text.length;
+    } else {
+        // У латиниці ці 8 символів рахуються за ДВА
+        for (let i = 0; i < text.length; i++) {
+            if ("~^[]{}\\|".indexOf(text[i]) !== -1) {
+                calcLength += 2;
+            } else {
+                calcLength += 1;
+            }
+        }
+    }
+
+    // 3. Таблиці лімітів від TurboSMS
+    const latinLimits = [160, 305, 457, 609, 761, 913, 1065, 1217, 1369, 1521];
+    const uniLimits = [70, 133, 199, 265, 331, 397, 463, 529, 595, 661];
+
+    let limits = isUnicode ? uniLimits : latinLimits;
+    
+    // ЗМІНЕНО: Стартуємо з 0 СМС (замість 1)
+    let parts = 0; 
+    let maxCharsInCurrentPart = limits[0]; // 160 або 70
+
+    if (calcLength > 0) {
+        let foundLimit = false;
+        for (let i = 0; i < limits.length; i++) {
+            if (calcLength <= limits[i]) {
+                parts = i + 1;
+                maxCharsInCurrentPart = limits[i];
+                foundLimit = true;
+                break;
+            }
+        }
+        
+        // Якщо раптом текст гігантський (більше 10 частин)
+        if (!foundLimit) {
+            if (isUnicode) {
+                parts = Math.ceil((calcLength - 67) / 66) + 1;
+                maxCharsInCurrentPart = 67 + 66 * (parts - 1);
+            } else {
+                parts = Math.ceil((calcLength - 153) / 152) + 1;
+                maxCharsInCurrentPart = 153 + 152 * (parts - 1);
+            }
+        }
+    }
+
+    // Рахуємо, скільки залишилось до наступної межі
+    const left = maxCharsInCurrentPart - calcLength;
+
+    // 4. Оновлюємо лівий бік (Символи)
+    let charCountEl = document.getElementById('charCount');
+    let charLeftEl = document.getElementById('charLeft');
+    if (charCountEl) charCountEl.innerText = calcLength;
+    if (charLeftEl) charLeftEl.innerText = left;
+
+    // 5. Підрахунок вартості
+    let price = 1.29; 
+    if (typeof savedSmsPrice !== 'undefined' && !isNaN(savedSmsPrice)) {
+        price = parseFloat(savedSmsPrice);
+    }
+    
+    let totalCost = (parts * price).toFixed(2); 
+    
+    // 6. Оновлюємо правий бік
+    let wrapper = document.getElementById('smsStatusWrapper');
+    if (wrapper) {
+        let colorClass = parts >= 3 ? 'sms-warning' : 'energy-color';
+        let partsClass = parts >= 3 ? 'sms-warning' : '';
+        
+        // Якщо 0 смс, ціна сіра, а не яскраво-зелена
+        if (parts === 0) {
+            colorClass = '';
+        }
+
+        wrapper.innerHTML = `
+            <span class="emoji-icon">📱</span> СМС: <strong class="${partsClass}">${parts}</strong> шт
+            <span style="margin-left: 5px;">≈ <strong class="${colorClass}">${totalCost}</strong> ₴</span>
+        `;
+    }
+}
+
 function updatePreview() {
-    if (!loadedTemplates || loadedTemplates.length === 0) return; // Додав !loadedTemplates
+    if (!loadedTemplates || loadedTemplates.length === 0) return;
     
     let templateSelect = document.getElementById('template');
     let selectedIndex = templateSelect ? templateSelect.value : null;
     
-    // Додана надійна перевірка
     if (selectedIndex === null || selectedIndex === "" || !loadedTemplates[selectedIndex]) {
         document.getElementById('message').value = 'Шаблон не знайдено';
+        updateSmsCounter(); // <--- ДОДАТИ ЦЕ
         return;
     }
 
@@ -272,17 +367,24 @@ function updatePreview() {
     text = text.replace(/{password}/g, extractedData.password);
     
     document.getElementById('message').value = text;
+    
+    updateSmsCounter(); // <--- ДОДАТИ ЦЕ (оновлює лічильник при виборі шаблону)
 }
 
 function loadSettings() {
-    chrome.storage.local.get(['ultraToken', 'energyToken', 'autoClose'], (data) => {
+    chrome.storage.local.get(['ultraToken', 'energyToken', 'autoClose', 'smsPrice'], (data) => {
         if (data.ultraToken) creds.ultra.token = data.ultraToken;
         if (data.energyToken) creds.energy.token = data.energyToken;
+        
+        // Якщо ціна збережена - беремо її. Якщо ні (перший запуск) - лишаємо 1.29
+        savedSmsPrice = data.smsPrice !== undefined ? parseFloat(data.smsPrice) : 1.29;
         
         autoCloseEnabled = data.autoClose !== undefined ? data.autoClose : true;
         
         let toggle = document.getElementById('autoCloseToggle');
         if (toggle) toggle.checked = autoCloseEnabled;
+        
+        updateSmsCounter(); // ДОДАНО: відмальовує ціну і "1 шт" при старті розширення
     });
 }
 
@@ -353,6 +455,9 @@ function restoreStateFromCache(cachedState) {
     document.getElementById('amount').value = cachedState.amount || '';
     document.getElementById('template').value = cachedState.templateIndex || '0';
     document.getElementById('message').value = cachedState.message || '';
+    
+    // ДОДАНО: Примусово запускаємо підрахунок після відновлення тексту!
+    updateSmsCounter();
     
     saveStateToCache(); 
 }
@@ -440,6 +545,7 @@ function runAutoParse() {
                 let wrapper = document.getElementById('multiPhoneWrapper');
                 if (wrapper) wrapper.style.display = 'none';
                 
+                updateSmsCounter(); // ДОДАНО: оновлює лічильник, коли поля очистилися
                 return; // Зупиняємо виконання функції
             }
 
@@ -525,7 +631,16 @@ function checkAuthAndParse() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const manifestData = chrome.runtime.getManifest();
-    document.getElementById('app-version').innerText = manifestData.version;
+    const vBtn = document.getElementById('versionBtn');
+    if (vBtn) {
+        vBtn.title = "Поточна версія: " + manifestData.version;
+        // Забороняємо клік, якщо немає класу 'has-update'
+        vBtn.addEventListener('click', (e) => {
+            if (!vBtn.classList.contains('has-update')) {
+                e.preventDefault(); 
+            }
+        });
+    }
 
     // ДІСТАЄМО СТАТУС І ТЕМУ ОДНОЧАСНО
     chrome.storage.local.get(['isAuthorized', 'theme'], (data) => {
@@ -585,6 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 document.getElementById('onboardingView').style.display = 'none';
                 document.getElementById('mainView').style.display = 'block';
+                updateSmsCounter(); // <--- ДОДАНО ОДИН РЯДОК
                 runAutoParse();
             }, 500);
         });
@@ -618,6 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('settingsView').style.display = 'block';
         document.getElementById('ultraToken').value = creds.ultra.token;
         document.getElementById('energyToken').value = creds.energy.token;
+        document.getElementById('smsPriceInput').value = savedSmsPrice; // <--- ДОДАТИ ЦЕ
         resetButton('saveSettingsBtn'); 
     });
 
@@ -633,24 +750,32 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mainView').style.display = 'block';
     });
 
-     document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
         let uT = document.getElementById('ultraToken').value.trim();
         let eT = document.getElementById('energyToken').value.trim();
         let aC = document.getElementById('autoCloseToggle').checked; 
-        let selectedTheme = document.getElementById('themeSelector').value; // Отримуємо обрану тему
+        let selectedTheme = document.getElementById('themeSelector').value; 
+        
+        // Читаємо ціну, якщо поле пусте - страхуємось і ставимо 1.29
+        let priceVal = parseFloat(document.getElementById('smsPriceInput').value);
+        let sPrice = isNaN(priceVal) ? 1.29 : priceVal; 
 
         showButtonStatus('saveSettingsBtn', 'Зберігаємо...', 'loading');
 
-        chrome.storage.local.set({ ultraToken: uT, energyToken: eT, autoClose: aC, theme: selectedTheme }, () => {
+        // Зберігаємо smsPrice в пам'ять браузера
+        chrome.storage.local.set({ ultraToken: uT, energyToken: eT, autoClose: aC, theme: selectedTheme, smsPrice: sPrice }, () => {
             creds.ultra.token = uT; 
             creds.energy.token = eT; 
             autoCloseEnabled = aC; 
-            document.body.setAttribute('data-theme', selectedTheme); // Застосовуємо тему остаточно
+            savedSmsPrice = sPrice; // Оновлюємо змінну
+            
+            document.body.setAttribute('data-theme', selectedTheme);
             
             showButtonStatus('saveSettingsBtn', 'Збережено!', 'success');
             setTimeout(() => {
-                document.getElementById('closeSettingsIconBtn').click(); // Програмно натискаємо на хрестик
+                document.getElementById('closeSettingsIconBtn').click(); 
                 resetButton('saveSettingsBtn');
+                updateSmsCounter(); // Відразу оновлюємо ціну на екрані
             }, 1000); 
         });
     });
@@ -666,80 +791,110 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     // Зберігаємо зміни номера і тексту на льоту
     document.getElementById('phone').addEventListener('input', saveStateToCache);
-    document.getElementById('message').addEventListener('input', saveStateToCache);
+    document.getElementById('message').addEventListener('input', () => {
+        saveStateToCache();
+        updateSmsCounter(); // Оновлює лічильник, коли друкуєте руками
+    });
 
     document.getElementById('sendBtn').addEventListener('click', () => {
-        let rawPhoneInput = document.getElementById('phone').value.trim().toLowerCase();
-        let text = document.getElementById('message').value;
+    let rawPhoneInput = document.getElementById('phone').value.trim().toLowerCase();
+    let text = document.getElementById('message').value;
 
-        if (rawPhoneInput === 'test') {
-            showButtonStatus('sendBtn', 'Тестова відправка...', 'loading');
-            setTimeout(() => {
-                showButtonStatus('sendBtn', 'Тест успішний!', 'success');
-                if (autoCloseEnabled) setTimeout(() => window.close(), 1200);
-            }, 800);
-            return; 
-        }
+    // === ТЕСТ: Успішна відправка ===
+    if (rawPhoneInput === 'test') {
+        showButtonStatus('sendBtn', 'Тестова відправка...', 'loading');
+        setTimeout(() => {
+            showButtonStatus('sendBtn', 'Тест успішний!', 'success');
+            if (autoCloseEnabled) setTimeout(() => window.close(), 1200);
+        }, 800);
+        return; 
+    }
 
-        if (!currentNetwork) {
-            showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
-            return;
-        }
-
-        let currentToken = creds[currentNetwork].token;
-        let currentSender = creds[currentNetwork].sender;
-
-        if (!currentToken) {
-            showButtonStatus('sendBtn', 'Вкажіть токен у налаштуваннях!', 'error');
-            return;
-        }
-
-        let phone = rawPhoneInput.replace(/\D/g, '');
-
-        if (!phone) {
-            showButtonStatus('sendBtn', 'Введіть номер телефону!', 'error');
-            return;
-        }
-        if (!text || text.trim() === '') {
-            showButtonStatus('sendBtn', 'Повідомлення порожнє!', 'error');
-            return;
-        }
-        if (phone.length === 10) phone = '38' + phone;
-        if (phone.length !== 12 || !phone.startsWith('380')) {
-            showButtonStatus('sendBtn', 'Некоректний формат номера!', 'error');
-            return;
-        }
-
-        showButtonStatus('sendBtn', 'Відправляємо SMS...', 'loading');
-
-        fetch('https://api.turbosms.ua/message/send.json', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-            body: JSON.stringify({ "recipients": [phone], "sms": { "sender": currentSender, "text": text } })
-        })
-        .then(response => {
-            // Перевіряємо, чи це взагалі JSON, перед тим як парсити
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                return response.json();
-            } else {
-                throw new Error("Сервер повернув не JSON (можливо помилка 502)");
-            }
-        })
-        .then(data => {
-            if (data.response_code === 800 || data.response_code === 801) { 
-                showButtonStatus('sendBtn', 'Успішно надіслано!', 'success');
-                if (autoCloseEnabled) setTimeout(() => window.close(), 1200);
-            } else {
-                showButtonStatus('sendBtn', data.response_status || 'Невідома помилка', 'error');
-            }
-        })
-        .catch(error => {
-            console.error("Помилка відправки SMS:", error); // В консоль для дебагу
-            showButtonStatus('sendBtn', 'Помилка з\'єднання з API!', 'error');
-        });
+    // === ТЕСТ: Поява вікна оновлення (команда "up") ===
+    if (rawPhoneInput === 'up') {
+        showButtonStatus('sendBtn', 'Перевірка версії...', 'loading');
         
+        setTimeout(() => {
+            const btn = document.getElementById('sendBtn');
+            btn.className = 'btn';
+            btn.textContent = 'Відправити SMS';
+            btn.disabled = false;
+
+            const vBtn = document.getElementById('versionBtn');
+            const updateText = document.getElementById('updateText');
+            const bannerVersion = document.getElementById('updateBannerVersion');
+
+            if (vBtn && updateText && bannerVersion) {
+                bannerVersion.textContent = "9.9.9"; // Номер версії
+                updateText.style.display = 'flex';   // Показуємо іконку
+                vBtn.classList.add('has-update');    // Розширюємо кнопку (неон)
+                vBtn.title = "Завантажити оновлення!";
+                vBtn.href = "https://github.com/ultranetpopilnya/UltraEnergy-SMS-Tool/archive/refs/heads/main.zip"; // ПОСИЛАННЯ
+                vBtn.target = "_blank";              // ДОДАНО: Тепер завантаження піде в новій вкладці
+            }
+        }, 600);
+        return;
+    }
+
+    // === ОСНОВНА ЛОГІКА ВІДПРАВКИ SMS ===
+    if (!currentNetwork) {
+        showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
+        return;
+    }
+
+    let currentToken = creds[currentNetwork].token;
+    let currentSender = creds[currentNetwork].sender;
+
+    if (!currentToken) {
+        showButtonStatus('sendBtn', 'Вкажіть токен у налаштуваннях!', 'error');
+        return;
+    }
+
+    let phone = rawPhoneInput.replace(/\D/g, '');
+
+    if (!phone) {
+        showButtonStatus('sendBtn', 'Введіть номер телефону!', 'error');
+        return;
+    }
+    if (!text || text.trim() === '') {
+        showButtonStatus('sendBtn', 'Повідомлення порожнє!', 'error');
+        return;
+    }
+    if (phone.length === 10) phone = '38' + phone;
+    if (phone.length !== 12 || !phone.startsWith('380')) {
+        showButtonStatus('sendBtn', 'Некоректний формат номера!', 'error');
+        return;
+    }
+
+    showButtonStatus('sendBtn', 'Відправляємо SMS...', 'loading');
+
+    fetch('https://api.turbosms.ua/message/send.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+        body: JSON.stringify({ "recipients": [phone], "sms": { "sender": currentSender, "text": text } })
+    })
+    .then(response => {
+        // Перевіряємо, чи це взагалі JSON, перед тим як парсити
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            return response.json();
+        } else {
+            throw new Error("Сервер повернув не JSON (можливо помилка 502)");
+        }
+    })
+    .then(data => {
+        if (data.response_code === 800 || data.response_code === 801) { 
+            showButtonStatus('sendBtn', 'Успішно надіслано!', 'success');
+            if (autoCloseEnabled) setTimeout(() => window.close(), 1200);
+        } else {
+            showButtonStatus('sendBtn', data.response_status || 'Невідома помилка', 'error');
+        }
+    })
+    .catch(error => {
+        console.error("Помилка відправки SMS:", error); // В консоль для дебагу
+        showButtonStatus('sendBtn', 'Помилка з\'єднання з API!', 'error');
     });
+});
 
     // ТИМЧАСОВА КНОПКА ДЛЯ РОЗРОБНИКА
     let reloadBtn = document.getElementById('devReloadBtn');
