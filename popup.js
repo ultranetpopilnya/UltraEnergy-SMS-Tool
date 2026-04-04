@@ -587,8 +587,7 @@ function runAutoParse() {
         } else if (currentTab.url.includes('bill.ispenergy.com.ua')) {
             currentNetwork = 'energy';
         } else {
-            // ЯКЩО ЦЕ ІНШИЙ САЙТ - беремо Ultra за замовчуванням
-            currentNetwork = 'ultra'; 
+            currentNetwork = null; // <--- БЛОКУЄМО МЕРЕЖУ!
             isBillingSite = false;
         }
 
