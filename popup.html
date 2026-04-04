@@ -102,6 +102,54 @@ body {
 .header-center { justify-content: center; }
 .input-center { text-align: center; margin-bottom: 10px; }
 
+/* Рядок для лейбла та кнопки трансліту */
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px; 
+    margin-bottom: 0px; /* Відступ між кнопкою і полем */
+}
+
+.label-row label {
+    margin: 0;
+    line-height: 1; /* Прибираємо невидиме "повітря" навколо тексту */
+    margin-left: 7px; 
+}
+
+/* Нова повноцінна, але маленька кнопка */
+.translit-btn-small {
+    background-color: transparent;
+    color: var(--text-color);
+    border: none; 
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 400;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    justify-content: center;   /* Центрує по горизонталі (вліво/вправо) */
+    margin-right: 0px; 
+    line-height: 1;            /* Забирає приховані відступи самого шрифту */
+}
+
+.translit-btn-small:hover {
+ background: transparent;
+}
+
+.translit-btn-small:active {
+                transform: scale(0.96); 
+            transition: transform 0.05s ease-out;
+}
+
+/* Налаштування іконки для цієї кнопки */
+.img-icon-translit {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
         .sms-counter-bar {
             display: flex;
             justify-content: center;
@@ -679,15 +727,22 @@ input.has-dropdown {
     </div>
 
 </div>
-        <label for="message">Текст SMS:</label>
+        <!-- НОВИЙ БЛОК З КНОПКОЮ -->
+        <div class="label-row">
+            <label for="message">Текст SMS:</label>
+            <button id="translitBtn" class="translit-btn-small" title="Змінити розкладку">
+                <span id="translitBtnText">Трансліт латиницею</span>
+                <img src="icons/input_latin_uppercase_3d.png" class="img-icon-translit" alt="Трансліт">
+            </button>
+        </div>
         <textarea id="message"></textarea>
         <div class="sms-counter-bar">
-    <div>Символів: <strong id="charCount">0</strong> (залишилось: <strong id="charLeft">160</strong>)&nbsp;</div>
-<div id="smsStatusWrapper">
-    СМС: <strong id="smsCount">0</strong>шт
-        <span style="margin-left: 5px;">≈<strong>0.00</strong> ₴</span>
-    </div>
-</div>
+            <div>Символів: <strong id="charCount">0</strong> (залишилось: <strong id="charLeft">160</strong>)&nbsp;</div>
+            <div id="smsStatusWrapper">
+                СМС: <strong id="smsCount">0</strong>шт
+                <span style="margin-left: 5px;">≈<strong>0.00</strong> ₴</span>
+            </div>
+        </div>
 
         <div class="sticky-footer">
             <div class="footer-action-row">

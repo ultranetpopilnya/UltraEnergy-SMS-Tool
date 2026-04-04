@@ -403,6 +403,139 @@ function updateSmsCounter() {
     }
 }
 
+// === 1. З УКРАЇНСЬКОЇ НА ЛАТИНИЦЮ (КМУ №55) ===
+function transliterateToLatin(text) {
+    if (!text) return '';
+    text = text.replace(/Зг/g, 'Zgh').replace(/зг/g, 'zgh');
+
+    const strictMap = {
+        'А':'A', 'а':'a', 'Б':'B', 'б':'b', 'В':'V', 'в':'v', 'Г':'H', 'г':'h',
+        'Ґ':'G', 'ґ':'g', 'Д':'D', 'д':'d', 'Е':'E', 'е':'e', 'Ж':'Zh', 'ж':'zh',
+        'З':'Z', 'з':'z', 'И':'Y', 'и':'y', 'І':'I', 'і':'i', 'К':'K', 'к':'k',
+        'Л':'L', 'л':'l', 'М':'M', 'м':'m', 'Н':'N', 'н':'n', 'О':'O', 'о':'o',
+        'П':'P', 'п':'p', 'Р':'R', 'р':'r', 'С':'S', 'с':'s', 'Т':'T', 'т':'t',
+        'У':'U', 'у':'u', 'Ф':'F', 'ф':'f', 'Х':'Kh', 'х':'kh', 'Ц':'Ts', 'ц':'ts',
+        'Ч':'Ch', 'ч':'ch', 'Ш':'Sh', 'ш':'sh', 'Щ':'Shch','щ':'shch'
+    };
+
+    const positionalMap = {
+        'Є': { start: 'Ye', other: 'ie' }, 'є': { start: 'ye', other: 'ie' },
+        'Ї': { start: 'Yi', other: 'i' },  'ї': { start: 'yi', other: 'i' },
+        'Й': { start: 'Y',  other: 'i' },  'й': { start: 'y',  other: 'i' },
+        'Ю': { start: 'Yu', other: 'iu' }, 'ю': { start: 'yu', other: 'iu' },
+        'Я': { start: 'Ya', other: 'ia' }, 'я': { start: 'ya', other: 'ia' }
+    };
+
+    let result = '';
+    for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        let isStartOfWord = (i === 0) || /[\s\n\.,!?;:'"()\[\]{}\-]/.test(text[i - 1]);
+
+        if (strictMap[char] !== undefined) {
+            result += strictMap[char];
+        } else if (positionalMap[char] !== undefined) {
+            result += isStartOfWord ? positionalMap[char].start : positionalMap[char].other;
+        } else if (char === 'ь' || char === 'Ь' || char === '\'' || char === '’' || char === '`' || char === 'ʼ') {
+            continue; // М'який знак та апострофи видаляємо
+        } else {
+            result += char;
+        }
+    }
+    return result;
+}
+
+// === 2. З ЛАТИНИЦІ НА УКРАЇНСЬКУ (Зворотний алгоритм) ===
+function transliterateToCyrillic(text) {
+    if (!text) return '';
+    
+    // 1. Складні комбінації
+    let res = text
+        .replace(/Zgh/g, 'Зг').replace(/zgh/g, 'зг')
+        .replace(/Shch/g, 'Щ').replace(/shch/g, 'щ')
+        .replace(/Ts/g, 'Ц').replace(/ts/g, 'ц')
+        .replace(/Ch/g, 'Ч').replace(/ch/g, 'ч')
+        .replace(/Sh/g, 'Ш').replace(/sh/g, 'ш')
+        .replace(/Kh/g, 'Х').replace(/kh/g, 'х')
+        .replace(/Zh/g, 'Ж').replace(/zh/g, 'ж');
+
+    // 2. Позиційні (на початку слова: межа слова \b)
+    res = res
+        .replace(/\bYe/g, 'Є').replace(/\bye/g, 'є')
+        .replace(/\bYi/g, 'Ї').replace(/\byi/g, 'ї')
+        .replace(/\bYu/g, 'Ю').replace(/\byu/g, 'ю')
+        .replace(/\bYa/g, 'Я').replace(/\bya/g, 'я')
+        .replace(/\bY/g, 'Й').replace(/\by/g, 'й');
+
+    // 3. Позиційні (всередині слова)
+    res = res.replace(/ie/g, 'є').replace(/iu/g, 'ю').replace(/ia/g, 'я');
+
+    // 4. Пряма заміна 1 до 1
+    const simpleMap = {
+        'A':'А', 'a':'а', 'B':'Б', 'b':'б', 'V':'В', 'v':'в', 'H':'Г', 'h':'г',
+        'G':'Ґ', 'g':'ґ', 'D':'Д', 'd':'д', 'E':'Е', 'e':'е', 'Z':'З', 'z':'з',
+        'Y':'И', 'y':'и', 'I':'І', 'i':'і', 'K':'К', 'k':'к', 'L':'Л', 'l':'л', 
+        'M':'М', 'm':'м', 'N':'Н', 'n':'н', 'O':'О', 'o':'о', 'P':'П', 'p':'п', 
+        'R':'Р', 'r':'р', 'S':'С', 's':'с', 'T':'Т', 't':'т', 'U':'У', 'u':'у', 
+        'F':'Ф', 'f':'ф'
+    };
+
+    let finalRes = '';
+    for (let i = 0; i < res.length; i++) {
+        let char = res[i];
+        finalRes += simpleMap[char] !== undefined ? simpleMap[char] : char;
+    }
+
+    return finalRes;
+}
+
+// === ФУНКЦІЯ ТРАНСЛІТЕРАЦІЇ ЗГІДНО З КМУ №55 ===
+function transliterateToLatin(text) {
+    if (!text) return '';
+
+    // Зг згідно з правилами передається як Zgh (щоб не плутати з Ж - Zh)
+    text = text.replace(/Зг/g, 'Zgh').replace(/зг/g, 'zgh');
+
+    const strictMap = {
+        'А':'A', 'а':'a', 'Б':'B', 'б':'b', 'В':'V', 'в':'v', 'Г':'H', 'г':'h',
+        'Ґ':'G', 'ґ':'g', 'Д':'D', 'д':'d', 'Е':'E', 'е':'e', 'Ж':'Zh', 'ж':'zh',
+        'З':'Z', 'з':'z', 'И':'Y', 'и':'y', 'І':'I', 'і':'i', 'К':'K', 'к':'k',
+        'Л':'L', 'л':'l', 'М':'M', 'м':'m', 'Н':'N', 'н':'n', 'О':'O', 'о':'o',
+        'П':'P', 'п':'p', 'Р':'R', 'р':'r', 'С':'S', 'с':'s', 'Т':'T', 'т':'t',
+        'У':'U', 'у':'u', 'Ф':'F', 'ф':'f', 'Х':'Kh', 'х':'kh', 'Ц':'Ts', 'ц':'ts',
+        'Ч':'Ch', 'ч':'ch', 'Ш':'Sh', 'ш':'sh', 'Щ':'Shch','щ':'shch'
+    };
+
+    // Букви, що міняють значення залежно від позиції у слові
+    const positionalMap = {
+        'Є': { start: 'Ye', other: 'ie' }, 'є': { start: 'ye', other: 'ie' },
+        'Ї': { start: 'Yi', other: 'i' },  'ї': { start: 'yi', other: 'i' },
+        'Й': { start: 'Y',  other: 'i' },  'й': { start: 'y',  other: 'i' },
+        'Ю': { start: 'Yu', other: 'iu' }, 'ю': { start: 'yu', other: 'iu' },
+        'Я': { start: 'Ya', other: 'ia' }, 'я': { start: 'ya', other: 'ia' }
+    };
+
+    let result = '';
+    for (let i = 0; i < text.length; i++) {
+        let char = text[i];
+        
+        // Визначаємо, чи буква стоїть на початку слова (початок рядка або після пробілу/пунктуації)
+        let isStartOfWord = (i === 0) || /[\s\n\.,!?;:'"()\[\]{}\-]/.test(text[i - 1]);
+
+        if (strictMap[char] !== undefined) {
+            result += strictMap[char];
+        } else if (positionalMap[char] !== undefined) {
+            result += isStartOfWord ? positionalMap[char].start : positionalMap[char].other;
+        } else if (char === 'ь' || char === 'Ь' || char === '\'' || char === '’' || char === '`' || char === 'ʼ') {
+            // М'який знак та апострофи різних видів не відтворюються (пропускаємо)
+            continue;
+        } else {
+            // Всі інші символи (цифри, англійські букви, знаки) залишаємо як є
+            result += char;
+        }
+    }
+    return result;
+}
+
 function updatePreview() {
     if (!loadedTemplates || loadedTemplates.length === 0) return;
     
@@ -412,6 +545,7 @@ function updatePreview() {
     if (selectedIndex === null) {
         document.getElementById('message').value = '';
         updateSmsCounter();
+        updateTranslitBtnState();
         return;
     }
     
@@ -563,7 +697,7 @@ function restoreStateFromCache(cachedState) {
     
     // ДОДАНО: Примусово запускаємо підрахунок після відновлення тексту!
     updateSmsCounter();
-    
+    updateTranslitBtnState();
     saveStateToCache(); 
 }
 
@@ -596,16 +730,32 @@ function runAutoParse() {
 
         // 3. ЯКЩО ЦЕ НЕ САЙТ БІЛІНГУ
         if (!isBillingSite) {
-            subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
+            subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!'; // <-- ВАШ ОРИГІНАЛЬНИЙ ТЕКСТ
             subTitle.className = 'warning-text'; 
             subTitle.style.display = 'block';
             
-            // Примусово очищаємо поля вводу
+            // Робимо недоступним поле шаблону
+            let tplInput = document.getElementById('templateInput');
+            if (tplInput) {
+                tplInput.value = 'Шаблони недоступні';
+                tplInput.disabled = true;
+                tplInput.style.cursor = 'not-allowed';
+            }
+            
+            // Очищаємо інші поля, але НЕ блокуємо їх (щоб працювали команди test / up)
             document.getElementById('phone').value = '';
             document.getElementById('amount').value = '';
+            document.getElementById('message').value = '';
             
-            updatePreview(); // Це зробить поле СМС пустим
+            updateSmsCounter();
             return; 
+        } else {
+            // РОЗБЛОКОВУЄМО поле шаблону, якщо повернулися на білінг
+            let tplInput = document.getElementById('templateInput');
+            if (tplInput) {
+                tplInput.disabled = false;
+                tplInput.style.cursor = 'pointer';
+            }
         }
 
         // 4. ПЕРЕВІРЯЄМО, ЧИ ЦЕ САМЕ КАРТКА АБОНЕНТА
@@ -734,7 +884,6 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get(['isAuthorized', 'theme'], (data) => {
         
         // 1. ЗАСТОСОВУЄМО ТЕМУ
-        // 1. ЗАСТОСОВУЄМО ТЕМУ
 let savedTheme = data.theme || 'light';
 document.body.setAttribute('data-theme', savedTheme);
 
@@ -762,6 +911,7 @@ if (themeInput) {
             document.getElementById('mainView').style.display = 'none';
         }
     });
+    
 
     // === ЛОГІКА ВІДКРИТТЯ/ЗАКРИТТЯ ПЛАВАЮЧОГО СПИСКУ НОМЕРІВ ===
     const phoneBtn = document.getElementById('phoneDropdownBtn');
@@ -789,8 +939,47 @@ if (themeInput) {
         }
     });
     }
+    
+    // === СЛУХАЧ КНОПКИ ТРАНСЛІТЕРАЦІЇ (ДВОСТОРОННІЙ) ===
+    const translitBtn = document.getElementById('translitBtn');
+    if (translitBtn) {
+        translitBtn.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            let msgEl = document.getElementById('message');
+            let text = msgEl.value;
+            if (!text) return;
 
-    // Далі йдуть твої слухачі кнопок (loginBtn і т.д.)...
+            const hasCyrillic = /[а-яА-ЯєЄїЇіІґҐ]/.test(text);
+
+            if (hasCyrillic) {
+                msgEl.value = transliterateToLatin(text);
+            } else {
+                msgEl.value = transliterateToCyrillic(text);
+            }
+            
+            updateSmsCounter(); 
+            saveStateToCache(); 
+            updateTranslitBtnState(); // <--- ДОДАНО: одразу міняє напис після кліку
+        });
+    }
+
+    // === ФУНКЦІЯ: ОНОВЛЕННЯ ТЕКСТУ НА КНОПЦІ ТРАНСЛІТУ ===
+function updateTranslitBtnState() {
+    const btnText = document.getElementById('translitBtnText');
+    const msgEl = document.getElementById('message');
+    if (!btnText || !msgEl) return;
+    
+    const text = msgEl.value;
+    
+    // Якщо пусто або є хоч одна кирилична літера -> Пропонуємо "в Lat"
+    const hasCyrillic = /[а-яА-ЯєЄїЇіІґҐ]/.test(text);
+    
+    if (text === '' || hasCyrillic) {
+        btnText.innerText = 'Трансліт латиницею';
+    } else {
+        btnText.innerText = 'Трансліт кирилицею';
+    }
+}
 
     document.getElementById('loginBtn').addEventListener('click', async () => {
         let inputPass = document.getElementById('accessKey').value;
@@ -831,6 +1020,7 @@ if (themeInput) {
             }, 500);
         });
     });
+    
 
     const pinBtn = document.getElementById('pinBtn');
     if (isSidePanel) {
@@ -950,6 +1140,10 @@ if (themeInput) {
     function toggleTemplateMenu(e) {
         e.preventDefault();
         e.stopPropagation();
+        
+        // ЗАПОБІЖНИК: блокуємо виклик меню, якщо не на білінгу
+        if (!currentNetwork) return; 
+
         // Якщо відкрите меню телефонів - закриваємо його, щоб не накладались
         if (phoneMenu) phoneMenu.style.display = 'none';
         
@@ -970,6 +1164,7 @@ if (themeInput) {
     document.getElementById('message').addEventListener('input', () => {
         saveStateToCache();
         updateSmsCounter(); // Оновлює лічильник, коли друкуєте руками
+        updateTranslitBtnState(); // <--- ДОДАЙТЕ ЦЕЙ РЯДОК СЮДИ
     });
 
     document.getElementById('sendBtn').addEventListener('click', () => {
