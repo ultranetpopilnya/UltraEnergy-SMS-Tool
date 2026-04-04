@@ -399,19 +399,25 @@ function updateSmsCounter() {
             colorClass = '';
         }
 
-        wrapper.innerHTML = `СМС: <strong class="${partsClass}">${parts}</strong> шт<span style="margin-left: 5px;">≈ <strong class="${colorClass}">${totalCost}</strong> ₴</span>`;
+        wrapper.innerHTML = `СМС: <strong class="${partsClass}">${parts}</strong>шт<span style="margin-left: 5px;">≈ <strong class="${colorClass}">${totalCost}</strong> ₴</span>`;
     }
 }
 
 function updatePreview() {
     if (!loadedTemplates || loadedTemplates.length === 0) return;
     
-    // БЕРЕМО ДАНІ З НАШОЇ ЗМІННОЇ
     let selectedIndex = selectedTemplateIndex;
     
-    if (selectedIndex === null || !loadedTemplates[selectedIndex]) {
+    // Якщо шаблон ще не вибрано (ми не на білінгу) - поле пусте
+    if (selectedIndex === null) {
+        document.getElementById('message').value = '';
+        updateSmsCounter();
+        return;
+    }
+    
+    if (!loadedTemplates[selectedIndex]) {
         document.getElementById('message').value = 'Шаблон не знайдено';
-        updateSmsCounter(); // <--- ДОДАТИ ЦЕ
+        updateSmsCounter(); 
         return;
     }
 
@@ -425,7 +431,7 @@ function updatePreview() {
     
     document.getElementById('message').value = text;
     
-    updateSmsCounter(); // <--- ДОДАТИ ЦЕ (оновлює лічильник при виборі шаблону)
+    updateSmsCounter(); 
 }
 
 function loadSettings() {
@@ -444,14 +450,13 @@ function loadSettings() {
     });
 }
 
-async function loadTemplatesFromFile(network) {
+async function loadTemplatesFromFile(network, isBillingSite = true) {
     let fileName = network === 'ultra' ? 'templates_ultra.json' : 'templates_energy.json';
     try {
         let url = chrome.runtime.getURL(fileName);
         let response = await fetch(url);
         loadedTemplates = await response.json();
 
-        // НОВА ЛОГІКА ДЛЯ КАСТОМНОГО МЕНЮ ШАБЛОНІВ
         let menu = document.getElementById('templateDropdownMenu');
         let input = document.getElementById('templateInput');
         
@@ -459,11 +464,19 @@ async function loadTemplatesFromFile(network) {
         
         menu.innerHTML = ''; 
 
-        // Ставимо початковий текст (перший шаблон)
+        // Ставимо початковий текст (або залишаємо пустим)
         if (loadedTemplates.length > 0) {
-            // Перевіряємо, чи індекс не виходить за межі (якщо змінилась мережа)
-            if (selectedTemplateIndex >= loadedTemplates.length) selectedTemplateIndex = 0;
-            input.value = loadedTemplates[selectedTemplateIndex].title;
+            if (isBillingSite) {
+                if (selectedTemplateIndex === null || selectedTemplateIndex >= loadedTemplates.length) {
+                    selectedTemplateIndex = 0;
+                }
+                input.value = loadedTemplates[selectedTemplateIndex].title;
+            } else {
+                // Якщо не на сайті білінгу - скидаємо індекс і очищаємо поле
+                selectedTemplateIndex = null;
+                input.value = ''; 
+                input.placeholder = 'Оберіть шаблон...';
+            }
         }
 
         // Наповнюємо плаваюче меню
@@ -534,13 +547,17 @@ function restoreStateFromCache(cachedState) {
 
     document.getElementById('phone').value = cachedState.phone || '';
     document.getElementById('amount').value = cachedState.amount || '';
-    // Відновлюємо індекс
-    selectedTemplateIndex = cachedState.templateIndex !== undefined ? cachedState.templateIndex : 0;
+    // Відновлюємо індекс (може бути null)
+    selectedTemplateIndex = cachedState.templateIndex !== undefined ? cachedState.templateIndex : null;
     
     // Візуально повертаємо назву шаблону в поле
     let tplInput = document.getElementById('templateInput');
-    if (tplInput && loadedTemplates[selectedTemplateIndex]) {
-        tplInput.value = loadedTemplates[selectedTemplateIndex].title;
+    if (tplInput) {
+        if (selectedTemplateIndex !== null && loadedTemplates[selectedTemplateIndex]) {
+            tplInput.value = loadedTemplates[selectedTemplateIndex].title;
+        } else {
+            tplInput.value = ''; // Якщо індекс null, залишаємо пустим
+        }
     }
     document.getElementById('message').value = cachedState.message || '';
     
@@ -575,15 +592,20 @@ function runAutoParse() {
             isBillingSite = false;
         }
 
-        // 2. ЗАВАНТАЖУЄМО ШАБЛОНИ ОДРАЗУ (щоб вони були доступні всюди)
-        await loadTemplatesFromFile(currentNetwork);
+        // 2. ЗАВАНТАЖУЄМО ШАБЛОНИ ОДРАЗУ (передаємо інфо, чи ми на сайті білінгу)
+        await loadTemplatesFromFile(currentNetwork, isBillingSite);
 
         // 3. ЯКЩО ЦЕ НЕ САЙТ БІЛІНГУ
         if (!isBillingSite) {
             subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
-            subTitle.className = 'warning-text'; // Повертає помаранчевий/червоний колір попередження
+            subTitle.className = 'warning-text'; 
             subTitle.style.display = 'block';
-            updatePreview(); 
+            
+            // Примусово очищаємо поля вводу
+            document.getElementById('phone').value = '';
+            document.getElementById('amount').value = '';
+            
+            updatePreview(); // Це зробить поле СМС пустим
             return; 
         }
 
