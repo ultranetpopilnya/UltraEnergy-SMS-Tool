@@ -47,8 +47,8 @@ body {
     --success-color: #38c172;
     --danger-color: rgb(191, 26, 26);
     --input-bg-color: #fff;
-    --input-border-color: #ccc;
-    --input-focus-border-color: #444;
+    --input-border-color: #d1d1d1;
+    --input-focus-border-color: #ababab;
     --warning-text: #d63030;
     
     /* Додані змінні для динамічної зміни */
@@ -143,8 +143,8 @@ body {
         ::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-hover); }
 
     ::-webkit-scrollbar-track {
-    margin-top: 6px;    /* Скролбар починається нижче заокруглення */
-    margin-bottom: 9px; /* Скролбар закінчується вище заокруглення */
+    margin-top: 7px;    /* Скролбар починається нижче заокруглення */
+    margin-bottom: 7px; /* Скролбар закінчується вище заокруглення */
     background: transparent;
 }
         
@@ -231,7 +231,7 @@ body {
 .header + label {
     margin-top: 8px;
 }
-    input, select, textarea { 
+    input, textarea { 
     width: 100%; 
     /* ЗМІНЕНО: було 4px. 6px дасть міліметр повітря між заголовком і полем */
     margin-top: 5px; 
@@ -245,9 +245,8 @@ body {
     color: var(--text-color); 
     transition: all 0.2s ease-in-out; 
 }
-        input:focus, select:focus, textarea:focus { border-color: var(--input-focus-border-color); outline: none; }
+        input:focus, textarea:focus { border-color: var(--input-focus-border-color); outline: none; }
         textarea { height: 116px; resize: none; background-color: var(--input-bg-color); line-height: 1.4; }
-        select { cursor: pointer; }
 
         /* КНОПКИ */
         button.btn { width: 100%; height: 42px; padding: 0 10px; margin-top: 16px; background-color: var(--primary-accent-color); font-family: inherit; color: white; border: 1px solid transparent; border-radius: 9999px; cursor: pointer;  font-weight: 400; font-size: 14px; transition: 0.2s ease-in-out; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -305,18 +304,6 @@ body {
 [data-theme="dark"] .icon-btn { color: #aaa; }
 
 
-[data-theme="dark"] select option {
-    /* Примусово фарбуємо самі "плашки" списку, що випадає, у темний колір */
-    background-color: var(--input-bg-color); 
-    color: var(--text-color);
-}
-
-[data-theme="dark"] select:focus option:checked {
-    /* Колір обраного елемента у списку (щоб не був стандартним синім) */
-    background: var(--primary-accent-color) linear-gradient(0deg, var(--primary-accent-color) 0%, var(--primary-accent-color) 100%);
-    color: #fff;
-}
-
         /* === ГОРИЗОНТАЛЬНА АНІМАЦІЯ ПЕРЕХОДІВ === */
         @keyframes slideInRight {
             0% { opacity: 0; transform: translateX(25px); }
@@ -348,28 +335,7 @@ body {
   margin: 0;
 }
 
-        /* === ПОКРАЩЕННЯ ЗОВНІШНЬОГО ВИГЛЯДУ SELECT === */
-select {
-    /* Прибираємо стандартну системну стрілку */
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    
-    /* Додаємо власну сучасну стрілку (SVG) */
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    background-size: 14px;
-    
-    /* Робимо відступ справа, щоб текст не налізав на стрілку */
-    padding-right: 32px;
-}
-
-/* Світла стрілка для темної теми */
-[data-theme="dark"] select {
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e0e0e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-}
-
+ 
 /* Вирівняли відступи лінії (було 17, стало 16 - для ідеальної сітки) */
 .setting-divider { 
     border: none; 
@@ -526,8 +492,8 @@ select {
 
 /* === М'ЯКА АНІМАЦІЯ СТРІЛОЧКИ ВНИЗ === */
 @keyframes bounceDown {
-    0%, 100% { transform: translateY(-50%); }
-    50% { transform: translateY(calc(-50% + 3px)); } /* Стрілочка ніжно опускається на 3px */
+    0%, 100% { transform: translateY(calc(-50% - 2px)); }
+    50% { transform: translateY(calc(-50% + 2px)); } /* Стрілочка ніжно опускається на 3px */
 }
 
 .anim-bounce-down {
@@ -542,9 +508,9 @@ select {
 
 .inside-input-btn {
     position: absolute;
-    right: 5px;
+    right: 7px;
     /* Відцентровуємо по вертикалі з урахуванням відступу інпута */
-    top: calc(50% + 2px); 
+    top: calc(50% + 2px);
     transform: translateY(-50%);
     background: none;
     border: none;
@@ -577,7 +543,7 @@ input.has-dropdown {
 }
 
 
-/* === ПЛАВАЮЧЕ МЕНЮ (як системний <select> шаблонів) === */
+/* === ПЛАВАЮЧЕ МЕНЮ === */
 .floating-dropdown {
     position: absolute;
     top: calc(100% + 4px); /* Трохи відступаємо від поля вниз */
@@ -612,8 +578,9 @@ input.has-dropdown {
     background-color: var(--select-bg);
     color: var(--text-color-inv);
     font-weight: 400;
-    padding-left: 18px; 
+    padding-left: 18px;
 }
+
     </style>
 </head>
 <body data-theme="light">
