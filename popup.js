@@ -1,38 +1,97 @@
 const SECRET_HASH = "f190a3d0c04e5b2b3f4ee16d2df26597720b8d1c09179d2a0dad7e4605776875";
 
-// === ФУНКЦІЯ МАЛЮВАННЯ СПИСКУ НОМЕРІВ ===
-function renderPhoneSelector(phones) {
-    let wrapper = document.getElementById('multiPhoneWrapper');
-    let selector = document.getElementById('phoneSelector');
+async function getDeviceKey() {
 
-    // Якщо номерів 0 або 1 - ховаємо цей допоміжний блок
+    const extId = chrome.runtime.id; 
+    const keyMaterial = await crypto.subtle.importKey(
+        "raw", new TextEncoder().encode(extId + "UltraEnergySecure"), 
+        { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]
+    );
+    return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: new TextEncoder().encode("StaticBrowserSalt99"), iterations: 10000, hash: "SHA-256" },
+        keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+    );
+}
+
+async function encryptToken(text) {
+    if (!text) return null;
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await getDeviceKey();
+    const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, new TextEncoder().encode(text));
+    return { ciphertext: Array.from(new Uint8Array(encrypted)), iv: Array.from(iv) };
+}
+
+async function decryptToken(encryptedObj) {
+    if (!encryptedObj || !encryptedObj.ciphertext) return '';
+    try {
+        const key = await getDeviceKey();
+        const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: new Uint8Array(encryptedObj.iv) }, 
+            key, 
+            new Uint8Array(encryptedObj.ciphertext)
+        );
+        return new TextDecoder().decode(decrypted);
+    } catch (e) {
+        console.error("Помилка розшифровки токена", e);
+        return '';
+    }
+}
+
+// === ФУНКЦІЯ МАЛЮВАННЯ ПЛАВАЮЧОГО СПИСКУ НОМЕРІВ ===
+function renderPhoneSelector(phones) {
+    let badge = document.getElementById('phoneBadge');
+    let btn = document.getElementById('phoneDropdownBtn');
+    let menu = document.getElementById('phoneDropdownMenu');
+    let phoneInput = document.getElementById('phone');
+
+    // Очищаємо попередні класи перед новим рендером
+badge.className = 'phone-badge'; 
+btn.className = 'inside-input-btn'; // скидаємо анімацію
+
+if (currentNetwork === 'ultra') {
+    badge.classList.add('ultra-color'); // Додає фіолетовий колір Ultranet
+} else if (currentNetwork === 'energy') {
+    badge.classList.add('energy-color'); // Додає зелений колір ISP Energy
+}
+
+// Додаємо м'яку анімацію, щоб кнопка привертала увагу
+btn.classList.add('anim-bounce-down');
+
+    // Якщо номерів 0 або 1 - ховаємо всі допоміжні елементи
     if (!phones || phones.length <= 1) {
-        if (wrapper) wrapper.style.display = 'none';
+        if (badge) badge.style.display = 'none';
+        if (btn) btn.style.display = 'none';
+        if (menu) menu.style.display = 'none';
+        if (phoneInput) phoneInput.classList.remove('has-dropdown');
         return;
     }
 
-    // Якщо номерів багато - показуємо блок
-    if (wrapper) wrapper.style.display = 'block';
+    // Якщо номерів більше 1 - показуємо бейдж та кнопку 🔽
+    if (badge) {
+        badge.innerText = `(${phones.length})`;
+        badge.style.display = 'inline-block';
+    }
+    if (btn) btn.style.display = 'block';
+    if (phoneInput) phoneInput.classList.add('has-dropdown');
     
-    // Очищаємо список і додаємо перший пункт-підказку
-    selector.innerHTML = '<option value="" disabled selected>⬇ Оберіть один номер зі списку...</option>';
-
-    phones.forEach(p => {
-        let opt = document.createElement('option');
-        opt.value = p;
-        opt.text = '+ ' + p;
-        selector.appendChild(opt);
-    });
-
-    // При виборі зі списку - переносимо номер у головне поле
-    selector.onchange = (e) => {
-        if (e.target.value) {
-            document.getElementById('phone').value = e.target.value;
-            saveStateToCache();
-            // Повертаємо селект на початкову позицію (щоб можна було клікнути ще раз, якщо треба)
-            selector.value = ""; 
-        }
-    };
+    // Очищаємо і наповнюємо плаваюче меню
+    if (menu) {
+        menu.innerHTML = '';
+        phones.forEach(p => {
+            let item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerText = '+ ' + p;
+            
+            // Клік по номеру в списку
+            item.onclick = (e) => {
+                e.stopPropagation(); // Зупиняємо подію, щоб меню не клікнуло само по собі
+                phoneInput.value = p;
+                saveStateToCache();
+                menu.style.display = 'none'; // Ховаємо меню
+            };
+            menu.appendChild(item);
+        });
+    }
 }
 
 // === ФУНКЦІЯ: СТАТУСИ ПРЯМО НА КНОПЦІ ===
@@ -93,6 +152,7 @@ async function sha256(message) {
 let creds = { ultra: { token: '', sender: 'UltraNet' }, energy: { token: '', sender: 'ISP Energy' } };
 let currentNetwork = null; 
 let loadedTemplates = []; 
+let selectedTemplateIndex = 0; // <-- ДОДАТИ: Пам'ятає, який шаблон обрано
 let extractedData = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
 let autoCloseEnabled = true;
 let savedSmsPrice = 1.29;
@@ -339,20 +399,17 @@ function updateSmsCounter() {
             colorClass = '';
         }
 
-        wrapper.innerHTML = `
-            <span class="emoji-icon">📱</span> СМС: <strong class="${partsClass}">${parts}</strong> шт
-            <span style="margin-left: 5px;">≈ <strong class="${colorClass}">${totalCost}</strong> ₴</span>
-        `;
+        wrapper.innerHTML = `СМС: <strong class="${partsClass}">${parts}</strong> шт<span style="margin-left: 5px;">≈ <strong class="${colorClass}">${totalCost}</strong> ₴</span>`;
     }
 }
 
 function updatePreview() {
     if (!loadedTemplates || loadedTemplates.length === 0) return;
     
-    let templateSelect = document.getElementById('template');
-    let selectedIndex = templateSelect ? templateSelect.value : null;
+    // БЕРЕМО ДАНІ З НАШОЇ ЗМІННОЇ
+    let selectedIndex = selectedTemplateIndex;
     
-    if (selectedIndex === null || selectedIndex === "" || !loadedTemplates[selectedIndex]) {
+    if (selectedIndex === null || !loadedTemplates[selectedIndex]) {
         document.getElementById('message').value = 'Шаблон не знайдено';
         updateSmsCounter(); // <--- ДОДАТИ ЦЕ
         return;
@@ -372,19 +429,18 @@ function updatePreview() {
 }
 
 function loadSettings() {
-    chrome.storage.local.get(['ultraToken', 'energyToken', 'autoClose', 'smsPrice'], (data) => {
-        if (data.ultraToken) creds.ultra.token = data.ultraToken;
-        if (data.energyToken) creds.energy.token = data.energyToken;
+    chrome.storage.local.get(['encUltra', 'encEnergy', 'autoClose', 'smsPrice'], async (data) => {
+        // Непомітно для користувача розшифровуємо токени
+        if (data.encUltra) creds.ultra.token = await decryptToken(data.encUltra);
+        if (data.encEnergy) creds.energy.token = await decryptToken(data.encEnergy);
         
-        // Якщо ціна збережена - беремо її. Якщо ні (перший запуск) - лишаємо 1.29
         savedSmsPrice = data.smsPrice !== undefined ? parseFloat(data.smsPrice) : 1.29;
-        
         autoCloseEnabled = data.autoClose !== undefined ? data.autoClose : true;
         
         let toggle = document.getElementById('autoCloseToggle');
         if (toggle) toggle.checked = autoCloseEnabled;
         
-        updateSmsCounter(); // ДОДАНО: відмальовує ціну і "1 шт" при старті розширення
+        updateSmsCounter(); 
     });
 }
 
@@ -395,18 +451,43 @@ async function loadTemplatesFromFile(network) {
         let response = await fetch(url);
         loadedTemplates = await response.json();
 
-        let select = document.getElementById('template');
-        select.innerHTML = ''; 
+        // НОВА ЛОГІКА ДЛЯ КАСТОМНОГО МЕНЮ ШАБЛОНІВ
+        let menu = document.getElementById('templateDropdownMenu');
+        let input = document.getElementById('templateInput');
         
+        if (!menu || !input) return;
+        
+        menu.innerHTML = ''; 
+
+        // Ставимо початковий текст (перший шаблон)
+        if (loadedTemplates.length > 0) {
+            // Перевіряємо, чи індекс не виходить за межі (якщо змінилась мережа)
+            if (selectedTemplateIndex >= loadedTemplates.length) selectedTemplateIndex = 0;
+            input.value = loadedTemplates[selectedTemplateIndex].title;
+        }
+
+        // Наповнюємо плаваюче меню
         loadedTemplates.forEach((tpl, index) => {
-            let opt = document.createElement('option');
-            opt.value = index; 
-            opt.text = tpl.title;
-            select.appendChild(opt);
+            let item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerText = tpl.title;
+            
+            // Що робити при кліку на шаблон
+            item.onclick = (e) => {
+                e.stopPropagation(); 
+                input.value = tpl.title; // Змінюємо текст у полі
+                selectedTemplateIndex = index; // Запам'ятовуємо індекс
+                menu.style.display = 'none'; // Ховаємо меню
+                
+                updatePreview(); // Оновлюємо текст СМС
+                saveStateToCache(); // Зберігаємо в кеш
+            };
+            menu.appendChild(item);
         });
     } catch (e) {
         console.error("Не вдалося завантажити файл шаблонів: ", e);
-        document.getElementById('template').innerHTML = '<option value="">Помилка завантаження шаблонів</option>';
+        let input = document.getElementById('templateInput');
+        if (input) input.value = 'Помилка завантаження';
     }
 }
 
@@ -420,7 +501,7 @@ function saveStateToCache() {
         extractedData: extractedData,
         amount: document.getElementById('amount').value,
         phone: document.getElementById('phone').value,
-        templateIndex: document.getElementById('template').value,
+        templateIndex: selectedTemplateIndex,
         message: document.getElementById('message').value,
         timestamp: Date.now() // Ставимо час, щоб знати, хто найновіший
     };
@@ -453,7 +534,14 @@ function restoreStateFromCache(cachedState) {
 
     document.getElementById('phone').value = cachedState.phone || '';
     document.getElementById('amount').value = cachedState.amount || '';
-    document.getElementById('template').value = cachedState.templateIndex || '0';
+    // Відновлюємо індекс
+    selectedTemplateIndex = cachedState.templateIndex !== undefined ? cachedState.templateIndex : 0;
+    
+    // Візуально повертаємо назву шаблону в поле
+    let tplInput = document.getElementById('templateInput');
+    if (tplInput && loadedTemplates[selectedTemplateIndex]) {
+        tplInput.value = loadedTemplates[selectedTemplateIndex].title;
+    }
     document.getElementById('message').value = cachedState.message || '';
     
     // ДОДАНО: Примусово запускаємо підрахунок після відновлення тексту!
@@ -462,58 +550,58 @@ function restoreStateFromCache(cachedState) {
     saveStateToCache(); 
 }
 
-// ГОЛОВНА ФУНКЦІЯ ПАРСИНГУ
+// ГОЛОВНА ФУНКЦІЯ ПАРСИНГУ ТА ЗАВАНТАЖЕННЯ
 function runAutoParse() {
     resetButton('sendBtn'); 
 
     let queryOptions = isSidePanel ? { active: true, lastFocusedWindow: true } : { active: true, currentWindow: true };
     
-    chrome.tabs.query(queryOptions, (tabs) => {
+    // ДОДАНО async СЮДИ
+    chrome.tabs.query(queryOptions, async (tabs) => { 
         if (!tabs || tabs.length === 0) return;
         
         let currentTab = tabs[0];
         let subTitle = document.getElementById('subTitle');
+        let isBillingSite = true;
         
-        // 1. ВИЗНАЧАЄМО МЕРЕЖУ ЛИШЕ ПО ДОМЕНУ
+        // 1. ВИЗНАЧАЄМО МЕРЕЖУ ПО ДОМЕНУ
         if (currentTab.url.includes('bill.ultranetgroup.com.ua')) {
             currentNetwork = 'ultra';
         } else if (currentTab.url.includes('bill.ispenergy.com.ua')) {
             currentNetwork = 'energy';
         } else {
-    currentNetwork = null;
-    // ✅ ЗАМІНИТИ subTitle.style.display = 'none'; НА:
-    subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
-    subTitle.className = 'warning-text';
-    subTitle.style.display = 'block';
-    showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
-    return;
-}
+            // ЯКЩО ЦЕ ІНШИЙ САЙТ - беремо Ultra за замовчуванням
+            currentNetwork = 'ultra'; 
+            isBillingSite = false;
+        }
 
-        // 2. ПЕРЕВІРЯЄМО, ЧИ ЦЕ САМЕ КАРТКА АБОНЕНТА (Орієнтуємося на вміст сторінки, а не на URL)
+        // 2. ЗАВАНТАЖУЄМО ШАБЛОНИ ОДРАЗУ (щоб вони були доступні всюди)
+        await loadTemplatesFromFile(currentNetwork);
+
+        // 3. ЯКЩО ЦЕ НЕ САЙТ БІЛІНГУ
+        if (!isBillingSite) {
+            subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
+            subTitle.className = 'warning-text'; // Повертає помаранчевий/червоний колір попередження
+            subTitle.style.display = 'block';
+            updatePreview(); 
+            return; 
+        }
+
+        // 4. ПЕРЕВІРЯЄМО, ЧИ ЦЕ САМЕ КАРТКА АБОНЕНТА
         chrome.scripting.executeScript({
             target: { tabId: currentTab.id },
             func: () => {
-                // 1. Чи є UID в адресному рядку (прямий перехід)
                 let hasUidInUrl = window.location.search.includes('UID=') || window.location.search.includes('uid=');
-                
-                // 2. Чи є UID всередині сторінки (відкриття через пошук)
                 let hasContextUid = false;
                 let uidInputs = document.querySelectorAll('input[name="UID"], input[name="uid"], input[id="UID"]');
                 for (let input of uidInputs) {
-                    // Якщо поле існує і в ньому є текст (ігноруємо пусті поля пошуку)
                     if (input.value && input.value.trim() !== '') {
                         hasContextUid = true;
                         break;
                     }
                 }
-
-                // 3. Чи є на екрані елементи, які бувають ТІЛЬКИ в картці абонента
-                // (Поля "Кредит", "Договір", "Депозит" або кнопки копіювання пароля)
                 let profileIndicators = document.querySelectorAll('input[name="CREDIT"], input[name="DEPOSIT"], input[name="CONTRACT"], [onclick*="copyToBuffer"]');
-                let hasProfileElements = profileIndicators.length > 0;
-
-                // КАРТКА ВІДКРИТА: Якщо ми маємо ідентифікатор абонента І бачимо його поля
-                let isSubscriberCard = (hasUidInUrl || hasContextUid) && hasProfileElements;
+                let isSubscriberCard = (hasUidInUrl || hasContextUid) && profileIndicators.length > 0;
 
                 let isReloaded = !window.__sms_ext_marker;
                 if (isReloaded) {
@@ -531,52 +619,31 @@ function runAutoParse() {
             
             let pageInfo = markerResults[0].result;
 
-            // ЯКЩО ЦЕ НЕ КАРТКА АБОНЕНТА (головна сторінка, звіти тощо) - ЗУПИНЯЄМОСЬ
+            // ЯКЩО ЦЕ БІЛІНГ, АЛЕ НЕ КАРТКА АБОНЕНТА
             if (!pageInfo.isSubscriberCard) {
-    subTitle.innerText = 'Перевіряйте дані перед відправкою смс!';
-    subTitle.className = 'subtitle-text';
-    subTitle.style.display = 'block';
-    showButtonStatus('sendBtn', 'Відкрийте картку абонента!', 'error');
+                subTitle.innerText = 'Перевіряйте дані перед відправкою смс!';
+                subTitle.className = 'subtitle-text'; // Стандартний сірий текст
+                subTitle.style.display = 'block';
                 
-                // Очищаємо поля, щоб не "висіли" дані попереднього абонента
+                // Очищаємо поля, як було в оригіналі, щоб не висіли старі дані
                 document.getElementById('phone').value = '';
                 document.getElementById('amount').value = '';
-                document.getElementById('message').value = '';
-                let wrapper = document.getElementById('multiPhoneWrapper');
-                if (wrapper) wrapper.style.display = 'none';
-                
-                updateSmsCounter(); // ДОДАНО: оновлює лічильник, коли поля очистилися
-                return; // Зупиняємо виконання функції
+                updatePreview();
+                updateSmsCounter();
+                return; 
             }
 
             // === ЯКЩО МИ ТУТ - ЗНАЧИТЬ ВІДКРИТА КАРТКА АБОНЕНТА ===
-
-            // Малюємо відповідні заголовки
-            subTitle.style.display = 'none';
-            subTitle.className = '';
-            subTitle.innerText = '';
-            
-            if (currentNetwork === 'ultra') {
-                subTitle.innerText = 'Відправити SMS Ultranet';
-                subTitle.className = 'ultra-color subtitle-text'; 
-                subTitle.style.display = 'block';
-            } else if (currentNetwork === 'energy') {
-                subTitle.innerText = 'Відправити SMS ISP Energy';
-                subTitle.className = 'energy-color subtitle-text'; 
-                subTitle.style.display = 'block';
-            }
-
-            // Завантажуємо шаблони для обраної мережі
-            await loadTemplatesFromFile(currentNetwork);
+            subTitle.innerText = currentNetwork === 'ultra' ? 'Відправити SMS Ultranet' : 'Відправити SMS ISP Energy';
+            subTitle.className = currentNetwork === 'ultra' ? 'ultra-color subtitle-text' : 'energy-color subtitle-text'; 
+            subTitle.style.display = 'block';
 
             currentPageMarker = pageInfo.marker;
 
-            // Шукаємо цього абонента в пам'яті (Кеш)
             chrome.storage.session.get(['subscribersCache'], (storage) => {
                 let cache = storage.subscribersCache || {};
                 let cachedState = cache[currentPageMarker];
 
-                // Якщо сторінка НЕ оновлювалась і дані є в кеші
                 if (!pageInfo.isReloaded && cachedState) {
                     restoreStateFromCache(cachedState);
                     return; 
@@ -611,11 +678,11 @@ function runAutoParse() {
                         let phoneInput = document.getElementById('phone');
                         if (extractedData.phones.length > 0) phoneInput.value = extractedData.phones[0];
 
-                        // МАЛЮЄМО КНОПКИ ВИБОРУ НОМЕРІВ
-                        renderPhoneSelector(extractedData.phones);
+                        // Малюємо нові плаваючі кнопки вибору номерів
+                        if (typeof renderPhoneSelector === 'function') renderPhoneSelector(extractedData.phones);
 
                         updatePreview();
-                        saveStateToCache(); // Зберігаємо в кеш
+                        saveStateToCache(); 
                     }
                 });
             });
@@ -646,10 +713,17 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get(['isAuthorized', 'theme'], (data) => {
         
         // 1. ЗАСТОСОВУЄМО ТЕМУ
-        let savedTheme = data.theme || 'light';
-        document.body.setAttribute('data-theme', savedTheme);
-        let themeSelector = document.getElementById('themeSelector');
-        if (themeSelector) themeSelector.value = savedTheme;
+        // 1. ЗАСТОСОВУЄМО ТЕМУ
+let savedTheme = data.theme || 'light';
+document.body.setAttribute('data-theme', savedTheme);
+
+let themeInput = document.getElementById('themeInput');
+if (themeInput) {
+    // Зберігаємо технічне значення ('light' або 'dark')
+    themeInput.dataset.value = savedTheme;
+    // Показуємо користувачу гарний текст
+    themeInput.value = savedTheme === 'dark' ? 'Темна тема' : 'Світла тема';
+}
 
         // 2. ПОКАЗУЄМО ІНТЕРФЕЙС (ПРИБИРАЄМО ПРОЗОРІСТЬ)
         document.body.classList.add('theme-loaded');
@@ -667,6 +741,33 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('mainView').style.display = 'none';
         }
     });
+
+    // === ЛОГІКА ВІДКРИТТЯ/ЗАКРИТТЯ ПЛАВАЮЧОГО СПИСКУ НОМЕРІВ ===
+    const phoneBtn = document.getElementById('phoneDropdownBtn');
+    const phoneMenu = document.getElementById('phoneDropdownMenu');
+
+    if (phoneBtn && phoneMenu) {
+        // Клік по кнопці 🔽
+        phoneBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Перемикаємо видимість меню
+            phoneMenu.style.display = phoneMenu.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Клік будь-де у вікні - закриває всі відкриті меню
+    document.addEventListener('click', (e) => {
+        if (phoneMenu && phoneMenu.style.display === 'block' && e.target !== phoneBtn && e.target !== phoneMenu) {
+            phoneMenu.style.display = 'none';
+        }
+        if (tplMenu && tplMenu.style.display === 'block' && e.target !== tplBtn && e.target !== tplMenu && e.target !== tplInput) {
+            tplMenu.style.display = 'none';
+        }
+        if (themeMenu && themeMenu.style.display === 'block' && e.target !== themeBtn && e.target !== themeMenu && e.target !== themeInput) {
+            themeMenu.style.display = 'none';
+        }
+    });
+    }
 
     // Далі йдуть твої слухачі кнопок (loginBtn і т.д.)...
 
@@ -688,19 +789,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') document.getElementById('loginBtn').click();
     });
 
-    document.getElementById('onboardSaveBtn').addEventListener('click', () => {
+    document.getElementById('onboardSaveBtn').addEventListener('click', async () => {
         let uT = document.getElementById('onboardUltraToken').value.trim();
         let eT = document.getElementById('onboardEnergyToken').value.trim();
 
-        showButtonStatus('onboardSaveBtn', 'Зберігаємо...', 'loading');
+        showButtonStatus('onboardSaveBtn', 'Захищаємо дані...', 'loading');
 
-        chrome.storage.local.set({ ultraToken: uT, energyToken: eT }, () => {
+        // Шифруємо
+        let encU = await encryptToken(uT);
+        let encE = await encryptToken(eT);
+
+        chrome.storage.local.set({ encUltra: encU, encEnergy: encE }, () => {
             creds.ultra.token = uT; 
             creds.energy.token = eT; 
             setTimeout(() => {
                 document.getElementById('onboardingView').style.display = 'none';
                 document.getElementById('mainView').style.display = 'block';
-                updateSmsCounter(); // <--- ДОДАНО ОДИН РЯДОК
+                updateSmsCounter(); 
                 runAutoParse();
             }, 500);
         });
@@ -738,10 +843,40 @@ document.addEventListener('DOMContentLoaded', () => {
         resetButton('saveSettingsBtn'); 
     });
 
-    // === ДИНАМІЧНА ЗМІНА ТЕМИ (ПОПЕРЕДНІЙ ПЕРЕГЛЯД) ===
-    document.getElementById('themeSelector').addEventListener('change', (e) => {
-        document.body.setAttribute('data-theme', e.target.value);
-    });
+    // === ЛОГІКА ВІДКРИТТЯ МЕНЮ ТЕМ ===
+    const themeBtn = document.getElementById('themeDropdownBtn');
+    const themeInput = document.getElementById('themeInput');
+    const themeMenu = document.getElementById('themeDropdownMenu');
+
+    function toggleThemeMenu(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        themeMenu.style.display = themeMenu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    if (themeBtn && themeInput && themeMenu) {
+        themeBtn.addEventListener('click', toggleThemeMenu);
+        themeInput.addEventListener('click', toggleThemeMenu);
+
+        // Обробка кліку по пунктах вибору теми
+        const themeItems = themeMenu.querySelectorAll('.dropdown-item');
+        themeItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                let selectedValue = item.dataset.value;
+                
+                // Оновлюємо поле вводу
+                themeInput.value = item.innerText;
+                themeInput.dataset.value = selectedValue; 
+                
+                // Одразу показуємо попередній перегляд теми
+                document.body.setAttribute('data-theme', selectedValue);
+                
+                // Ховаємо меню
+                themeMenu.style.display = 'none';
+            });
+        });
+    }
 
     // === НОВА КНОПКА ЗАКРИТТЯ НАЛАШТУВАНЬ (ІКОНКА ХРЕСТИК) ===
     document.getElementById('closeSettingsIconBtn').addEventListener('click', () => {
@@ -750,24 +885,30 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('mainView').style.display = 'block';
     });
 
-    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+    document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
         let uT = document.getElementById('ultraToken').value.trim();
         let eT = document.getElementById('energyToken').value.trim();
         let aC = document.getElementById('autoCloseToggle').checked; 
-        let selectedTheme = document.getElementById('themeSelector').value; 
-        
-        // Читаємо ціну, якщо поле пусте - страхуємось і ставимо 1.29
+        let selectedTheme = document.getElementById('themeInput').dataset.value || 'light';
         let priceVal = parseFloat(document.getElementById('smsPriceInput').value);
         let sPrice = isNaN(priceVal) ? 1.29 : priceVal; 
 
-        showButtonStatus('saveSettingsBtn', 'Зберігаємо...', 'loading');
+        showButtonStatus('saveSettingsBtn', 'Захищаємо дані...', 'loading');
 
-        // Зберігаємо smsPrice в пам'ять браузера
-        chrome.storage.local.set({ ultraToken: uT, energyToken: eT, autoClose: aC, theme: selectedTheme, smsPrice: sPrice }, () => {
+        let encU = await encryptToken(uT);
+        let encE = await encryptToken(eT);
+
+        chrome.storage.local.set({ 
+            encUltra: encU, 
+            encEnergy: encE, 
+            autoClose: aC, 
+            theme: selectedTheme, 
+            smsPrice: sPrice 
+        }, () => {
             creds.ultra.token = uT; 
             creds.energy.token = eT; 
             autoCloseEnabled = aC; 
-            savedSmsPrice = sPrice; // Оновлюємо змінну
+            savedSmsPrice = sPrice; 
             
             document.body.setAttribute('data-theme', selectedTheme);
             
@@ -775,16 +916,30 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 document.getElementById('closeSettingsIconBtn').click(); 
                 resetButton('saveSettingsBtn');
-                updateSmsCounter(); // Відразу оновлюємо ціну на екрані
+                updateSmsCounter(); 
             }, 1000); 
         });
     });
 
-    // === АВТОЗБЕРЕЖЕННЯ ЗМІН КОРИСТУВАЧА ===
-    document.getElementById('template').addEventListener('change', () => {
-        updatePreview();
-        saveStateToCache();
-    });
+    // === ЛОГІКА ВІДКРИТТЯ МЕНЮ ШАБЛОНІВ ===
+    const tplBtn = document.getElementById('templateDropdownBtn');
+    const tplInput = document.getElementById('templateInput');
+    const tplMenu = document.getElementById('templateDropdownMenu');
+
+    function toggleTemplateMenu(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        // Якщо відкрите меню телефонів - закриваємо його, щоб не накладались
+        if (phoneMenu) phoneMenu.style.display = 'none';
+        
+        tplMenu.style.display = tplMenu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    if (tplBtn && tplInput && tplMenu) {
+        // Дозволяємо відкривати меню і по кнопці-стрілочці, і просто клікнувши на поле вводу
+        tplBtn.addEventListener('click', toggleTemplateMenu);
+        tplInput.addEventListener('click', toggleTemplateMenu);
+    }
     document.getElementById('amount').addEventListener('input', () => {
         updatePreview();
         saveStateToCache();
