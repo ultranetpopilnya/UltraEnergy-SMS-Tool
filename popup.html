@@ -106,6 +106,196 @@ button img,
     opacity: 0; 
 }
 
+/* === ІКОНКА ГАМБУРГЕР === */
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 22px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0 0 0 50px;
+}
+.hamburger-icon span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background-color: var(--header-color);
+    border-radius: 2px;
+    transition: all 0.25s ease-in-out;
+}
+/* Анімація перетворення в хрестик при відкритті */
+.icon-btn.menu-open .hamburger-icon span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.icon-btn.menu-open .hamburger-icon span:nth-child(2) { opacity: 0; }
+.icon-btn.menu-open .hamburger-icon span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* === БЕЙДЖ ОНОВЛЕННЯ (Крапка) === */
+.menu-badge {
+    position: absolute;
+    top: -7px;
+    right: -6px;
+    width: 10px;
+    height: 10px;
+    background-color: var(--energy-color);
+    border-radius: 50%;
+    border: 2px solid var(--bg-color);
+    animation: pulseNeon 1.5s infinite alternate ease-in-out;
+}
+
+/* Піднімаємо кнопку гамбургера, щоб вона завжди була поверх виїжджаючого меню */
+#mainMenuBtn {
+    position: relative;
+    z-index: 1005; 
+}
+
+/* === БОКОВЕ МЕНЮ === */
+.sidebar-menu {
+    position: fixed; 
+    top: 0; bottom: 0; 
+    right: -240px;
+    width: 240px;
+    background: rgba(250, 249, 247, 0.82);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border-left: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.10);
+    z-index: 1001; 
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+}
+[data-theme="dark"] .sidebar-menu { 
+    background: rgba(28, 28, 36, 0.85);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Виїзд меню */
+.sidebar-menu.open { transform: translateX(-240px); }
+
+/* === НОРМАЛЬНИЙ СТИЛЬ КНОПОК === */
+.sidebar-menu .menu-item, 
+.sidebar-menu .menu-item-text {
+    padding: 11px 16px;
+    border-radius: 12px;
+    margin: 2px 10px;
+    width: calc(100% - 20px);
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.18s ease, transform 0.15s ease, color 0.18s ease;
+    font-size: 13px;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+}
+
+.sidebar-menu .menu-item-text {
+    color: var(--subtitle-color);
+    cursor: default;
+    font-size: 12px;
+    justify-content: center;
+    opacity: 0.75;
+    letter-spacing: 0.02em;
+}
+
+/* Наведення — ніжний glassmorphism */
+.sidebar-menu .menu-item:hover {
+    background: rgba(0, 0, 0, 0.065);
+    color: var(--text-color);
+    transform: translateX(-3px);
+}
+[data-theme="dark"] .sidebar-menu .menu-item:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--text-color);
+    transform: translateX(-3px);
+}
+
+/* Легке натискання */
+.sidebar-menu .menu-item:active {
+    transform: scale(0.96);
+}
+
+/* Розміри іконок */
+.sidebar-menu .menu-icon { 
+    width: 18px; height: 18px; margin-right: 10px; object-fit: contain; flex-shrink: 0; 
+}
+
+/* Заголовок сайдбару */
+.sidebar-header {
+    padding: 10px 18px 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 4px;
+}
+[data-theme="dark"] .sidebar-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.sidebar-header-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--subtitle-color);
+    opacity: 0.8;
+}
+
+/* Розділювач — розпірка по висоті */
+.menu-divider {
+    flex: 1;
+    border: none;
+    min-height: 12px;
+}
+
+/* Кнопка оновлення — сучасна пігулка */
+.update-item {
+    margin: 6px 10px 6px;
+    width: calc(100% - 20px);
+    background: linear-gradient(135deg, #007bff 0%, #0050cc 100%);
+    color: #fff;
+    border-radius: 14px;
+    justify-content: center;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.38);
+    animation: updatePulse 2.2s infinite alternate ease-in-out;
+    transform: translateX(0);
+}
+.update-item:hover {
+    background: linear-gradient(135deg, #1a8cff 0%, #0060ee 100%);
+    color: #fff;
+    transform: scale(1.02);
+    box-shadow: 0 6px 22px rgba(0, 123, 255, 0.55);
+}
+@keyframes updatePulse {
+    from { box-shadow: 0 4px 14px rgba(0, 123, 255, 0.32); }
+    to   { box-shadow: 0 4px 24px rgba(0, 123, 255, 0.58); }
+}
+
+[data-theme="dark"] .sidebar-menu .update-item {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+    animation: updatePulseDark 2.2s infinite alternate ease-in-out;
+}
+
+[data-theme="dark"] .sidebar-menu .update-item:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    box-shadow: 0 6px 22px rgba(59, 130, 246, 0.55);
+}
+
+@keyframes updatePulseDark {
+    from { box-shadow: 0 4px 14px rgba(59, 130, 246, 0.28); }
+    to   { box-shadow: 0 4px 24px rgba(59, 130, 246, 0.52); }
+}
+
+
+
 .header-center { justify-content: center; }
 .input-center { text-align: center; margin-bottom: 10px; }
 
@@ -145,13 +335,11 @@ button img,
     cursor: pointer;
     z-index: 10;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0.7; /* Робимо іконку тьмянішою у спокої */
     outline: none;
 }
 
 /* Ефект при наведенні */
 .translit-inside-btn:hover {
-    opacity: 1;
     transform: scale(1.1); /* Трохи збільшуємо саму іконку */
     background: transparent; /* Залишаємо прозорою */
 }
@@ -253,7 +441,6 @@ button img,
         
         .header-icons { display: flex; gap: 15px; align-items: center; }
         .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 0; color: #555; transition: 0.2s; }
-        .icon-btn:hover { transform: scale(1.2); }
         .icon-btn-danger:hover { color: var(--danger-color); }
         
     .img-icon {
@@ -270,21 +457,6 @@ button img,
     height: 18px;
     object-fit: contain;
     vertical-align: middle;
-}
-
-/* Ідеальне центрування іконки в круглій кнопці Інфо */
-.info-btn {
-    position: relative; /* ВАЖЛИВО! Додай це до існуючого .info-btn */
-}
-
-.info-btn #infoIcon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 22px;
-    height: 22px;
-    object-fit: contain;
 }
 
 /* Розмір кульок біля назв провайдерів (Ultra / Energy) */
@@ -461,103 +633,6 @@ button img,
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.212);
 }
 
-/* ========================================= */
-/* === РЯДОК: ВІДПРАВИТИ + КНОПКА ІНФО ===== */
-/* ========================================= */
-.footer-action-row {
-    display: flex;
-    gap: 7px; /* Відстань між кнопками */
-    align-items: center;
-    pointer-events: auto; /* Дозволяє клікати */
-}
-
-/* Робимо саме кнопку "Відправити" трохи вужчою, щоб вліз кружок */
-.sticky-footer .footer-action-row .btn {
-    width: 246px !important; 
-}
-
-.info-btn {
-    position: relative; /* ВАЖЛИВО: дозволяє ідеально відцентрувати картинку всередині */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    height: 42px;
-    border-radius: 9999px;
-    background-color: var(--input-bg-color);
-    border: 1px solid var(--input-border-color);
-    color: var(--subtitle-color);
-    text-decoration: none;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-/* Звичайна іконка (додали плавність) */
-.info-btn #infoIcon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(1); /* scale(1) - базовий розмір */
-    width: 20px; 
-    height: 20px;
-    object-fit: contain;
-    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); /* Плавна зміна розміру */
-}
-
-/* Коли мишка наводиться на кнопку -> іконка збільшується */
-.info-btn:hover #infoIcon {
-    /* ВАЖЛИВО: залишаємо translate(-50%, -50%), щоб вона не з'їхала з центру! */
-    transform: translate(-50%, -50%) scale(1.3); /* scale(1.2) - збільшення на 20% */
-}
-
-
-.info-btn:hover {
-    border-color: var(--primary-accent-color);
-}
-
-[data-theme="dark"] .info-btn {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.212);
-}
-
-/* === СТАН "Є ОНОВЛЕННЯ" (Розширена кнопка) === */
-.info-btn.has-update {
-    width: 105px; /* Кнопка розтягується */
-    padding: 0 12px;
-    background-color: var(--energy-color);
-    border-color: var(--energy-color);
-    color: #fff;
-    animation: pulseNeon 1.5s infinite alternate ease-in-out; /* Неон */
-}
-
-.info-btn.has-update:hover {
-    opacity: 0.9;
-}
-
-/* Коли з'являється оновлення — ховаємо картинку "ℹ️" */
-.info-btn.has-update #infoIcon {
-    display: none;
-}
-
-/* Текст "🆕 1.0.5" */
-.info-btn .update-text {
-    font-size: 14px;
-    font-weight: 400;
-    font-family: inherit; /* Успадковує правильний шрифт */
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-/* Неонове світіння для оновлення */
-:root { --neon-glow: rgba(0, 167, 0, 0.5); }
-[data-theme="dark"] { --neon-glow: rgba(129, 202, 66, 0.6); }
-
-@keyframes pulseNeon {
-    0% { box-shadow: 0 0 4px var(--neon-glow); }
-    100% { box-shadow: 0 0 16px var(--neon-glow); }
-}
 
 /* === НОВИЙ ДИЗАЙН ВИБОРУ НОМЕРІВ === */
 .phone-badge {
@@ -614,13 +689,16 @@ button img,
 /* Якщо кнопка видима, робимо відступ тексту, щоб він не залазив під кнопку */
 input.has-dropdown {
     padding-right: 32px !important;
+
 }
 
-/* Колір обраного/наведеного пункту (працює не в усіх браузерах) */
-#template option:checked {
-    background-color: var(--input-bg-color); 
-    color: var(--text-color);
-     font-weight: 400;  
+/* Плавний поворот іконки стрілки */
+.inside-input-btn img {
+    transition: transform 0.25s ease;
+}
+
+.inside-input-btn.open img {
+    transform: rotate(-90deg);
 }
 
 
@@ -639,6 +717,23 @@ input.has-dropdown {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 4px 0; /* Невеликий відступ зверху і знизу всередині */
+
+    transform-origin: top center;
+    animation: dropdownOpen 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes dropdownOpen {
+    from { opacity: 0; transform: scaleY(0.85) translateY(-6px); }
+    to   { opacity: 1; transform: scaleY(1)    translateY(0);    }
+}
+
+@keyframes dropdownClose {
+    from { opacity: 1; transform: scaleY(1)    translateY(0);    }
+    to   { opacity: 0; transform: scaleY(0.85) translateY(-6px); }
+}
+
+.floating-dropdown.closing {
+    animation: dropdownClose 0.15s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
 [data-theme="dark"] .floating-dropdown {
@@ -704,16 +799,23 @@ input.has-dropdown {
 
     <!-- ОСНОВНИЙ ЕКРАН -->
     <div id="mainView" class="anim-initial" style="display: none;">
+        
+        <!-- === ШАПКА === -->
         <div class="header">
             <div class="title-container">
                 <h3 id="mainTitle">UltraEnergy SMS Tool</h3>
                 <div id="subTitle"></div>
             </div>
             
+            <!-- Права частина шапки (МЕНЮ) -->
             <div class="header-icons">
-                <button class="icon-btn" id="devReloadBtn" title="Перезавантажити"><img src="icons/counterclockwise_arrows_button_3d.png" class="img-icon" style="margin:0;" alt="Reload"></button>
-<button class="icon-btn" id="pinBtn" title="Відкрити в боковій панелі"><img src="icons/pushpin_3d.png" class="img-icon" style="margin:0;" alt="Pin"></button>
-<button class="icon-btn" id="openSettingsBtn" title="Налаштування"><img src="icons/gear_3d.png" class="img-icon" style="margin:0;" alt="Settings"></button>
+                <!-- Кнопка Гамбургер -->
+                <button class="icon-btn" id="mainMenuBtn" title="Меню">
+                    <div class="hamburger-icon">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div id="menuUpdateBadge" class="menu-badge" style="display: none;"></div>
+                </button>
             </div>
         </div>
         
@@ -725,7 +827,7 @@ input.has-dropdown {
     
     <!-- Кнопка-стрілочка (така сама, як у телефонах) -->
     <button id="templateDropdownBtn" class="inside-input-btn" title="Відкрити список шаблонів">
-        <img src="icons/downwards_button_3d.png" class="img-icon-sm" alt="Select">
+        <img src="icons/reverse_button_3d.png" class="img-icon-sm" alt="Select">
     </button>
     
     <!-- Ваше кастомне меню, куди будуть додаватись пункти -->
@@ -745,7 +847,7 @@ input.has-dropdown {
         <div class="input-icon-wrapper">
             <input type="text" id="phone" placeholder="380...">
             <button id="phoneDropdownBtn" class="inside-input-btn" style="display: none;" title="Обрати інший знайдений номер">
-    <img src="icons/down_arrow_3d.png" class="img-icon-sm" alt="New">
+    <img src="icons/left_arrow_3d.png" class="img-icon-sm" alt="New">
 </button>
             
             <!-- Плаваюче меню -->
@@ -774,23 +876,12 @@ input.has-dropdown {
         <div class="sms-counter-bar">
             <div>Символів: <strong id="charCount">0</strong> (залишилось: <strong id="charLeft">160</strong>)&nbsp;</div>
             <div id="smsStatusWrapper">
-                СМС: <strong id="smsCount">0</strong>шт
-                <span style="margin-left: 5px;">≈<strong>0.00</strong> ₴</span>
-            </div>
+    СМС: <strong class="">0</strong>шт<span style="margin-left: 5px;">≈ <strong class="">0.00</strong> ₴</span>
+</div>
         </div>
 
         <div class="sticky-footer">
-            <div class="footer-action-row">
-                <button class="btn" id="sendBtn">Відправити SMS</button>
-                
-                <!-- Кругла кнопка версії/оновлення -->
-                <a class="info-btn" id="versionBtn" title="Версія...">
-                    <img src="icons/information_3d.png" id="infoIcon" alt="Info">
-    <span class="update-text" id="updateText" style="display: none;">
-        <img src="icons/new_button_3d.png" class="img-icon-sm" alt="New"> <span id="updateBannerVersion"></span>
-                    </span>
-                </a>
-            </div>
+            <button class="btn" id="sendBtn" style="width: calc(100% - 32px) !important;">Відправити SMS</button>
         </div>
     </div> <!-- ОСЬ ЦЕЙ DIV ЗАКРИВАЄ mainView. ВІН ДУЖЕ ВАЖЛИВИЙ! -->
 
@@ -833,14 +924,10 @@ input.has-dropdown {
     <input type="text" id="themeInput" readonly placeholder="Оберіть тему..." style="cursor: pointer; padding-right: 32px;" data-value="light">
     
     <button id="themeDropdownBtn" class="inside-input-btn" title="Оберіть тему">
-        <img src="icons/downwards_button_3d.png" class="img-icon-sm" alt="Select">
+        <img src="icons/reverse_button_3d.png" class="img-icon-sm" alt="Select">
     </button>
     
-    <div id="themeDropdownMenu" class="floating-dropdown" style="display: none;">
-        <!-- Додаємо data-value, щоб знати, яка це технічна назва теми -->
-        <div class="dropdown-item" data-value="light">Світла тема</div>
-        <div class="dropdown-item" data-value="dark">Темна тема</div>
-    </div>
+    <div id="themeDropdownMenu" class="floating-dropdown" style="display: none;"></div>
 </div>
 
         <!-- === РИСКА РОЗДІЛЕННЯ === -->
@@ -859,7 +946,41 @@ input.has-dropdown {
         </div>
     </div> <!-- Закриття settingsView -->
 
+<!-- === БОКОВЕ МЕНЮ (САЙДБАР СПРАВА) === -->
+    <div id="mainMenuDropdown" class="sidebar-menu">
+        
+        <div style="height: 56px;"></div>
+
+        <div class="sidebar-header">
+            <div class="sidebar-header-title">Меню</div>
+        </div>
+        
+        <button class="menu-item" id="menuSettingsBtn">
+            <img src="icons/gear_3d.png" class="menu-icon"> Налаштування
+        </button>
+        <button class="menu-item" id="menuPinBtn">
+            <img src="icons/pushpin_3d.png" class="menu-icon"> Прикріпити панель
+        </button>
+        <button class="menu-item" id="menuReloadBtn">
+            <img src="icons/counterclockwise_arrows_button_3d.png" class="menu-icon"> Перезавантажити
+        </button>
+        
+        <!-- Розпірка — притискає нижній блок до низу -->
+        <div class="menu-divider"></div>
+        
+        <!-- Кнопка оновлення (знизу, яскрава) -->
+        <button class="menu-item update-item" id="menuUpdateBtn" style="display: none;">
+            <img src="icons/new_button_3d.png" class="menu-icon"> Нова версія&nbsp;<span id="newVersionText"></span> ✦
+        </button>
+
+        <!-- Версія — тихо внизу, по центру -->
+        <div class="menu-item-text" id="menuVersionInfo">
+            <img src="icons/information_3d.png" class="menu-icon"> v <strong id="currentVersionText">...</strong>
+        </div>
+        
+        <div style="height: 10px;"></div>
+    </div>
+
     <script src="popup.js"></script>
-    <script src="version.js"></script>
 </body>
 </html>

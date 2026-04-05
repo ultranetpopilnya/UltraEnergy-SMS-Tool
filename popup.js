@@ -1,5 +1,82 @@
 const SECRET_HASH = "f190a3d0c04e5b2b3f4ee16d2df26597720b8d1c09179d2a0dad7e4605776875";
 
+function closeDropdown(menu, btn) {
+    menu.classList.add('closing');
+    menu.addEventListener('animationend', () => {
+        menu.style.display = 'none';
+        menu.classList.remove('closing');
+    }, { once: true });
+    if (btn) btn.classList.remove('open');
+}
+
+// === УНІВЕРСАЛЬНА ФУНКЦІЯ ДРОПДАУНУ ===
+// Використання: initDropdown('btnId', 'menuId', 'inputId', (value, label) => { ... }, { canOpen: () => true })
+// inputId — необов'язковий (null якщо не потрібен)
+// onSelect — викликається при виборі пункту: (value, label) => {}
+// options.canOpen — необов'язкова функція-перевірка чи можна відкрити
+function initDropdown(btnId, menuId, inputId, onSelect, options = {}) {
+    const btn = document.getElementById(btnId);
+    const menu = document.getElementById(menuId);
+    const input = inputId ? document.getElementById(inputId) : null;
+    if (!btn || !menu) return null;
+
+    const self = {
+        open() {
+            // Закриваємо всі інші відкриті дропдауни
+            document.querySelectorAll('.floating-dropdown').forEach(m => {
+                if (m !== menu && m.style.display === 'block') m._ddClose?.();
+            });
+            menu.style.display = 'block';
+            btn.classList.add('open');
+        },
+        close() {
+            closeDropdown(menu, btn);
+        },
+        toggle(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (options.canOpen && !options.canOpen()) return;
+            menu.style.display === 'block' ? self.close() : self.open();
+        },
+        clearItems() {
+            menu.innerHTML = '';
+        },
+        addItem(label, value) {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerText = label;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (input) input.value = label;
+                self.close();
+                if (onSelect) onSelect(value !== undefined ? value : label, label);
+            });
+            menu.appendChild(item);
+            return item;
+        }
+    };
+
+    // Зберігаємо посилання на close прямо на елементі (для закриття ззовні)
+    menu._ddClose = self.close;
+
+    btn.addEventListener('click', (e) => self.toggle(e));
+    if (input) input.addEventListener('click', (e) => self.toggle(e));
+
+    // Клік поза меню — закрити
+    document.addEventListener('click', (e) => {
+        if (menu.style.display === 'block'
+            && !btn.contains(e.target)
+            && !menu.contains(e.target)
+            && e.target !== input) {
+            self.close();
+        }
+    });
+
+    return self;
+}
+
+// Глобальні екземпляри дропдаунів (потрібні в renderPhoneSelector та loadTemplatesFromFile)
+let phoneDropdown, templateDropdown, themeDropdown;
+
 async function getDeviceKey() {
 
     const extId = chrome.runtime.id; 
@@ -75,22 +152,9 @@ function renderPhoneSelector(phones) {
     if (phoneInput) phoneInput.classList.add('has-dropdown');
     
     // Очищаємо і наповнюємо плаваюче меню
-    if (menu) {
-        menu.innerHTML = '';
-        phones.forEach(p => {
-            let item = document.createElement('div');
-            item.className = 'dropdown-item';
-            item.innerText = '+ ' + p;
-            
-            // Клік по номеру в списку
-            item.onclick = (e) => {
-                e.stopPropagation(); // Зупиняємо подію, щоб меню не клікнуло само по собі
-                phoneInput.value = p;
-                saveStateToCache();
-                menu.style.display = 'none'; // Ховаємо меню
-            };
-            menu.appendChild(item);
-        });
+    if (menu && phoneDropdown) {
+        phoneDropdown.clearItems();
+        phones.forEach(p => phoneDropdown.addItem('+ ' + p, p));
     }
 }
 
@@ -571,23 +635,12 @@ async function loadTemplatesFromFile(network, isBillingSite = true) {
         }
 
         // Наповнюємо плаваюче меню
-        loadedTemplates.forEach((tpl, index) => {
-            let item = document.createElement('div');
-            item.className = 'dropdown-item';
-            item.innerText = tpl.title;
-            
-            // Що робити при кліку на шаблон
-            item.onclick = (e) => {
-                e.stopPropagation(); 
-                input.value = tpl.title; // Змінюємо текст у полі
-                selectedTemplateIndex = index; // Запам'ятовуємо індекс
-                menu.style.display = 'none'; // Ховаємо меню
-                
-                updatePreview(); // Оновлюємо текст СМС
-                saveStateToCache(); // Зберігаємо в кеш
-            };
-            menu.appendChild(item);
-        });
+        if (templateDropdown) {
+            templateDropdown.clearItems();
+            loadedTemplates.forEach((tpl, index) => {
+                templateDropdown.addItem(tpl.title, index);
+            });
+        }
     } catch (e) {
         console.error("Не вдалося завантажити файл шаблонів: ", e);
         let input = document.getElementById('templateInput');
@@ -670,12 +723,15 @@ function runAutoParse() {
         
         let currentTab = tabs[0];
         let subTitle = document.getElementById('subTitle');
+        if (!subTitle) return;
         let isBillingSite = true;
         
         // 1. ВИЗНАЧАЄМО МЕРЕЖУ ПО ДОМЕНУ
-        if (currentTab.url.includes('bill.ultranetgroup.com.ua')) {
+        let currentUrl = currentTab.url || ""; // Якщо URL немає, робимо його порожнім текстом, щоб скрипт не падав
+
+        if (currentUrl.includes('bill.ultranetgroup.com.ua')) {
             currentNetwork = 'ultra';
-        } else if (currentTab.url.includes('bill.ispenergy.com.ua')) {
+        } else if (currentUrl.includes('bill.ispenergy.com.ua')) {
             currentNetwork = 'energy';
         } else {
             currentNetwork = null; // <--- БЛОКУЄМО МЕРЕЖУ!
@@ -844,44 +900,55 @@ function checkAuthAndParse() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const manifestData = chrome.runtime.getManifest();
-    const vBtn = document.getElementById('versionBtn');
-    if (vBtn) {
-        vBtn.title = "Поточна версія: " + manifestData.version;
-        // Забороняємо клік, якщо немає класу 'has-update'
-        vBtn.addEventListener('click', (e) => {
-            if (!vBtn.classList.contains('has-update')) {
-                e.preventDefault(); 
-            }
-        });
+// === ФУНКЦІЯ ВІДОБРАЖЕННЯ ОНОВЛЕННЯ В UI ===
+function showUpdateUI(newVersion) {
+    const badge = document.getElementById('menuUpdateBadge');
+    const updateBtn = document.getElementById('menuUpdateBtn');
+    const versionEl = document.getElementById('newVersionText');
+    const DOWNLOAD_URL = 'https://github.com/ultranetpopilnya/UltraEnergy-SMS-Tool/archive/refs/heads/main.zip';
+
+    if (badge) badge.style.display = 'block';
+    if (versionEl && newVersion) versionEl.innerText = newVersion;
+    if (updateBtn) {
+        updateBtn.style.display = 'flex';
+        updateBtn.onclick = () => window.open(DOWNLOAD_URL, '_blank');
     }
-
-    // ДІСТАЄМО СТАТУС І ТЕМУ ОДНОЧАСНО
-    chrome.storage.local.get(['isAuthorized', 'theme'], (data) => {
-        
-        // 1. ЗАСТОСОВУЄМО ТЕМУ
-let savedTheme = data.theme || 'light';
-document.body.setAttribute('data-theme', savedTheme);
-
-let themeInput = document.getElementById('themeInput');
-if (themeInput) {
-    // Зберігаємо технічне значення ('light' або 'dark')
-    themeInput.dataset.value = savedTheme;
-    // Показуємо користувачу гарний текст
-    themeInput.value = savedTheme === 'dark' ? 'Темна тема' : 'Світла тема';
 }
 
-        // 2. ПОКАЗУЄМО ІНТЕРФЕЙС (ПРИБИРАЄМО ПРОЗОРІСТЬ)
+document.addEventListener('DOMContentLoaded', () => {
+    // ДОДАЛИ В ЗАПИТ updateAvailable ТА newVersion
+    chrome.storage.local.get(['isAuthorized', 'theme', 'updateAvailable', 'newVersion'], (data) => {
+        
+        let savedTheme = data.theme || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+
+        let themeInput = document.getElementById('themeInput');
+        if (themeInput) {
+            themeInput.dataset.value = savedTheme;
+            themeInput.value = savedTheme === 'dark' ? 'Темна тема' : 'Світла тема';
+        }
+
         document.body.classList.add('theme-loaded');
 
-        // 3. РОЗПОДІЛЯЄМО ЕКРАНИ
         if (data.isAuthorized) {
             document.getElementById('loginView').style.display = 'none';
             document.getElementById('onboardingView').style.display = 'none';
             document.getElementById('mainView').style.display = 'block';
             loadSettings();
             runAutoParse();
+            
+            // 1. Миттєво показуємо оновлення, якщо бекграунд вже його знайшов раніше
+            if (data.updateAvailable) {
+                showUpdateUI(data.newVersion);
+            }
+
+            // 2. Змушуємо бекграунд перевірити ще раз ПРЯМО ЗАРАЗ (вимога: перевіряти при відкритті)
+            chrome.runtime.sendMessage({ type: 'CHECK_FOR_UPDATE_NOW' }, (response) => {
+                if (response && response.isNew) {
+                    showUpdateUI(response.version);
+                }
+            });
+            
         } else {
             document.getElementById('loginView').style.display = 'block';
             document.getElementById('onboardingView').style.display = 'none';
@@ -890,40 +957,34 @@ if (themeInput) {
     });
     
 
-    // === ЛОГІКА ВІДКРИТТЯ/ЗАКРИТТЯ ПЛАВАЮЧОГО СПИСКУ НОМЕРІВ ===
-    const phoneBtn = document.getElementById('phoneDropdownBtn');
-    const phoneMenu = document.getElementById('phoneDropdownMenu');
+    // === ІНІЦІАЛІЗАЦІЯ ВСІХ ДРОПДАУНІВ ===
 
-    if (phoneBtn && phoneMenu) {
-        // Клік по кнопці 🔽
-        phoneBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            // Перемикаємо видимість меню
-            phoneMenu.style.display = phoneMenu.style.display === 'none' ? 'block' : 'none';
-        });
+    phoneDropdown = initDropdown('phoneDropdownBtn', 'phoneDropdownMenu', null, (value) => {
+        document.getElementById('phone').value = value;
+        saveStateToCache();
+    });
 
-        // Клік будь-де у вікні - закриває всі відкриті меню (БЕЗПЕЧНИЙ ВАРІАНТ)
-        document.addEventListener('click', (e) => {
-            // Меню телефонів
-            if (phoneMenu && phoneMenu.style.display === 'block' && !phoneBtn.contains(e.target) && !phoneMenu.contains(e.target)) {
-                phoneMenu.style.display = 'none';
-            }
-            // Меню шаблонів (шукаємо елементи прямо тут, щоб уникнути помилок області видимості)
-            const tMenu = document.getElementById('templateDropdownMenu');
-            const tBtn = document.getElementById('templateDropdownBtn');
-            const tInput = document.getElementById('templateInput');
-            if (tMenu && tMenu.style.display === 'block' && e.target !== tBtn && e.target !== tMenu && e.target !== tInput) {
-                tMenu.style.display = 'none';
-            }
-            // Меню тем
-            const thMenu = document.getElementById('themeDropdownMenu');
-            const thBtn = document.getElementById('themeDropdownBtn');
-            const thInput = document.getElementById('themeInput');
-            if (thMenu && thMenu.style.display === 'block' && e.target !== thBtn && e.target !== thMenu && e.target !== thInput) {
-                thMenu.style.display = 'none';
-            }
-        });
+    templateDropdown = initDropdown('templateDropdownBtn', 'templateDropdownMenu', 'templateInput',
+        (value) => {
+            selectedTemplateIndex = value;
+            updatePreview();
+            saveStateToCache();
+        },
+        { canOpen: () => !!currentNetwork }
+    );
+
+    themeDropdown = initDropdown('themeDropdownBtn', 'themeDropdownMenu', 'themeInput',
+        (value, label) => {
+            const themeInput = document.getElementById('themeInput');
+            themeInput.dataset.value = value;
+            document.body.setAttribute('data-theme', value);
+        }
+    );
+
+    // Додаємо статичні пункти для теми (вони не генеруються динамічно)
+    if (themeDropdown) {
+        themeDropdown.addItem('Світла тема', 'light');
+        themeDropdown.addItem('Темна тема', 'dark');
     }
     
     // === СЛУХАЧ КНОПКИ ТРАНСЛІТЕРАЦІЇ (ДВОСТОРОННІЙ) ===
@@ -967,6 +1028,105 @@ function updateTranslitBtnState() {
     }
 }
 
+// === ЛОГІКА БОКОВОГО МЕНЮ (САЙДБАР) ===
+    
+    // Відображення версії
+    let versionEl = document.getElementById('currentVersionText');
+    if (versionEl) {
+        versionEl.innerText = chrome.runtime.getManifest().version;
+    }
+
+    const mainMenuBtn = document.getElementById('mainMenuBtn');
+    const mainMenuDropdown = document.getElementById('mainMenuDropdown');
+
+    function closeMainMenu() {
+        if (!mainMenuDropdown) return;
+        mainMenuDropdown.classList.remove('open');
+        if (mainMenuBtn) mainMenuBtn.classList.remove('menu-open');
+    }
+
+    if (mainMenuBtn && mainMenuDropdown) {
+        // Відкриття/Закриття меню
+        mainMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (mainMenuDropdown.classList.contains('open')) {
+                closeMainMenu();
+            } else {
+                // Ховаємо всі інші відкриті дропдауни
+                document.querySelectorAll('.floating-dropdown').forEach(m => {
+                    if (m.style.display === 'block') m._ddClose?.();
+                    m.style.display = 'none';
+                });
+                
+                mainMenuDropdown.classList.add('open');
+                mainMenuBtn.classList.add('menu-open');
+            }
+        });
+
+        // Клік поза меню закриває його
+        document.addEventListener('click', (e) => {
+            if (mainMenuDropdown.classList.contains('open') && 
+                !mainMenuDropdown.contains(e.target) && 
+                !mainMenuBtn.contains(e.target)) {
+                closeMainMenu();
+            }
+        });
+    }
+
+    // === ФУНКЦІЇ КНОПОК ВСЕРЕДИНІ МЕНЮ ===
+
+    // 1. Кнопка Налаштування
+    const menuSettingsBtn = document.getElementById('menuSettingsBtn');
+    if (menuSettingsBtn) {
+        menuSettingsBtn.addEventListener('click', () => {
+            closeMainMenu(); // Ховаємо сайдбар
+            document.getElementById('mainView').style.display = 'none';
+            document.getElementById('settingsView').className = 'anim-slide-right';
+            document.getElementById('settingsView').style.display = 'block';
+            document.getElementById('ultraToken').value = creds.ultra.token;
+            document.getElementById('energyToken').value = creds.energy.token;
+            document.getElementById('smsPriceInput').value = savedSmsPrice;
+            resetButton('saveSettingsBtn'); 
+        });
+    }
+
+    // 2. Кнопка Закріплення (Pin)
+    const menuPinBtnText = document.getElementById('menuPinBtn');
+    if (menuPinBtnText) {
+        if (isSidePanel) {
+            menuPinBtnText.innerHTML = `<img src="icons/left_arrow_3d.png" class="menu-icon"> Закрити панель`;
+        }
+        menuPinBtnText.addEventListener('click', () => {
+            closeMainMenu();
+            if (!isSidePanel) {
+                chrome.windows.getCurrent({ populate: false }, (win) => {
+                    chrome.sidePanel.open({ windowId: win.id }).then(() => {
+                        window.close(); 
+                    }).catch(e => console.error("Помилка відкриття:", e));
+                });
+            } else {
+                window.close();
+            }
+        });
+    }
+
+    // 3. Кнопка Перезавантаження
+    const menuReloadBtn = document.getElementById('menuReloadBtn');
+    if (menuReloadBtn) {
+        menuReloadBtn.addEventListener('click', () => {
+            chrome.runtime.reload();
+        });
+    }
+
+    // 4. Кнопка Оновлення
+    const menuUpdateBtn = document.getElementById('menuUpdateBtn');
+    if (menuUpdateBtn) {
+        menuUpdateBtn.addEventListener('click', () => {
+            window.open("https://github.com/ultranetpopilnya/UltraEnergy-SMS-Tool/archive/refs/heads/main.zip", "_blank");
+            closeMainMenu();
+        });
+    }
+
     document.getElementById('loginBtn').addEventListener('click', async () => {
         let inputPass = document.getElementById('accessKey').value;
         let hashedInput = await sha256(inputPass);
@@ -1006,74 +1166,6 @@ function updateTranslitBtnState() {
             }, 500);
         });
     });
-    
-
-    const pinBtn = document.getElementById('pinBtn');
-    if (isSidePanel) {
-        pinBtn.innerText = '✖️'; // Змінив іконку закриття панелі на красиву
-        pinBtn.title = 'Закрити панель';
-        pinBtn.classList.add('icon-btn-danger');
-    } else {
-        pinBtn.innerText = '📌';
-        pinBtn.title = 'Закріпити в боковій панелі';
-    }
-
-    pinBtn.addEventListener('click', () => {
-        if (!isSidePanel) {
-            chrome.windows.getCurrent({ populate: false }, (win) => {
-                chrome.sidePanel.open({ windowId: win.id }).then(() => {
-                    window.close(); 
-                }).catch(e => console.error("Помилка відкриття:", e));
-            });
-        } else {
-            window.close();
-        }
-    });
-
-    document.getElementById('openSettingsBtn').addEventListener('click', () => {
-        document.getElementById('mainView').style.display = 'none';
-        document.getElementById('settingsView').className = 'anim-slide-right';
-        document.getElementById('settingsView').style.display = 'block';
-        document.getElementById('ultraToken').value = creds.ultra.token;
-        document.getElementById('energyToken').value = creds.energy.token;
-        document.getElementById('smsPriceInput').value = savedSmsPrice; // <--- ДОДАТИ ЦЕ
-        resetButton('saveSettingsBtn'); 
-    });
-
-    // === ЛОГІКА ВІДКРИТТЯ МЕНЮ ТЕМ ===
-    const themeBtn = document.getElementById('themeDropdownBtn');
-    const themeInput = document.getElementById('themeInput');
-    const themeMenu = document.getElementById('themeDropdownMenu');
-
-    function toggleThemeMenu(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        themeMenu.style.display = themeMenu.style.display === 'none' ? 'block' : 'none';
-    }
-
-    if (themeBtn && themeInput && themeMenu) {
-        themeBtn.addEventListener('click', toggleThemeMenu);
-        themeInput.addEventListener('click', toggleThemeMenu);
-
-        // Обробка кліку по пунктах вибору теми
-        const themeItems = themeMenu.querySelectorAll('.dropdown-item');
-        themeItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                let selectedValue = item.dataset.value;
-                
-                // Оновлюємо поле вводу
-                themeInput.value = item.innerText;
-                themeInput.dataset.value = selectedValue; 
-                
-                // Одразу показуємо попередній перегляд теми
-                document.body.setAttribute('data-theme', selectedValue);
-                
-                // Ховаємо меню
-                themeMenu.style.display = 'none';
-            });
-        });
-    }
 
     // === НОВА КНОПКА ЗАКРИТТЯ НАЛАШТУВАНЬ (ІКОНКА ХРЕСТИК) ===
     document.getElementById('closeSettingsIconBtn').addEventListener('click', () => {
@@ -1118,39 +1210,22 @@ function updateTranslitBtnState() {
         });
     });
 
-    // === ЛОГІКА ВІДКРИТТЯ МЕНЮ ШАБЛОНІВ ===
-    const tplBtn = document.getElementById('templateDropdownBtn');
-    const tplInput = document.getElementById('templateInput');
-    const tplMenu = document.getElementById('templateDropdownMenu');
+    // Захист від перенавантаження Chrome Storage (Debounce)
+    let saveTimeout;
+    const safeSaveToCache = () => {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveStateToCache, 400); // Зберігає лише коли перестали друкувати на 400мс
+    };
 
-    function toggleTemplateMenu(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // ЗАПОБІЖНИК: блокуємо виклик меню, якщо не на білінгу
-        if (!currentNetwork) return; 
-
-        // Якщо відкрите меню телефонів - закриваємо його, щоб не накладались
-        if (phoneMenu) phoneMenu.style.display = 'none';
-        
-        tplMenu.style.display = tplMenu.style.display === 'none' ? 'block' : 'none';
-    }
-
-    if (tplBtn && tplInput && tplMenu) {
-        // Дозволяємо відкривати меню і по кнопці-стрілочці, і просто клікнувши на поле вводу
-        tplBtn.addEventListener('click', toggleTemplateMenu);
-        tplInput.addEventListener('click', toggleTemplateMenu);
-    }
     document.getElementById('amount').addEventListener('input', () => {
         updatePreview();
-        saveStateToCache();
+        safeSaveToCache();
     });
-    // Зберігаємо зміни номера і тексту на льоту
-    document.getElementById('phone').addEventListener('input', saveStateToCache);
+    document.getElementById('phone').addEventListener('input', safeSaveToCache);
     document.getElementById('message').addEventListener('input', () => {
-        saveStateToCache();
-        updateSmsCounter(); // Оновлює лічильник, коли друкуєте руками
-        updateTranslitBtnState(); // <--- ДОДАЙТЕ ЦЕЙ РЯДОК СЮДИ
+        safeSaveToCache();
+        updateSmsCounter(); 
+        updateTranslitBtnState(); 
     });
 
     document.getElementById('sendBtn').addEventListener('click', () => {
@@ -1172,23 +1247,18 @@ function updateTranslitBtnState() {
         showButtonStatus('sendBtn', 'Перевірка версії...', 'loading');
         
         setTimeout(() => {
-            const btn = document.getElementById('sendBtn');
-            btn.className = 'btn';
-            btn.textContent = 'Відправити SMS';
-            btn.disabled = false;
+            resetButton('sendBtn');
+            
+            // Викликаємо нашу нову функцію
+            showUpdateUI("9.9.9");
+            
+            // Автоматично відкриваємо меню, щоб користувач побачив зміну
+            document.getElementById('mainMenuBtn').click();
+            
+            // Тестово малюємо бейдж на самій іконці хрому (бо бекграунд це робить автоматично, а ми симулюємо)
+            chrome.action.setBadgeText({ text: '1' });
+            chrome.action.setBadgeBackgroundColor({ color: '#811e71' });
 
-            const vBtn = document.getElementById('versionBtn');
-            const updateText = document.getElementById('updateText');
-            const bannerVersion = document.getElementById('updateBannerVersion');
-
-            if (vBtn && updateText && bannerVersion) {
-                bannerVersion.textContent = "9.9.9"; // Номер версії
-                updateText.style.display = 'flex';   // Показуємо іконку
-                vBtn.classList.add('has-update');    // Розширюємо кнопку (неон)
-                vBtn.title = "Завантажити оновлення!";
-                vBtn.href = "https://github.com/ultranetpopilnya/UltraEnergy-SMS-Tool/archive/refs/heads/main.zip"; // ПОСИЛАННЯ
-                vBtn.target = "_blank";              // ДОДАНО: Тепер завантаження піде в новій вкладці
-            }
         }, 600);
         return;
     }
@@ -1226,13 +1296,18 @@ function updateTranslitBtnState() {
 
     showButtonStatus('sendBtn', 'Відправляємо SMS...', 'loading');
 
+    // ДОДАНО: Контролер для таймауту запиту (10 секунд)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     fetch('https://api.turbosms.ua/message/send.json', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
-        body: JSON.stringify({ "recipients": [phone], "sms": { "sender": currentSender, "text": text } })
+        body: JSON.stringify({ "recipients": [phone], "sms": { "sender": currentSender, "text": text } }),
+        signal: controller.signal // <--- Передаємо сигнал
     })
     .then(response => {
-        // Перевіряємо, чи це взагалі JSON, перед тим як парсити
+        clearTimeout(timeoutId); // <--- Скасовуємо таймаут, якщо відповідь прийшла
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
             return response.json();
@@ -1249,18 +1324,16 @@ function updateTranslitBtnState() {
         }
     })
     .catch(error => {
-        console.error("Помилка відправки SMS:", error); // В консоль для дебагу
-        showButtonStatus('sendBtn', 'Помилка з\'єднання з API!', 'error');
+        clearTimeout(timeoutId);
+        console.error("Помилка відправки SMS:", error);
+        // ДОДАНО: Обробка помилки таймауту
+        if (error.name === 'AbortError') {
+            showButtonStatus('sendBtn', 'Сервер TurboSMS не відповідає!', 'error');
+        } else {
+            showButtonStatus('sendBtn', 'Помилка з\'єднання з API!', 'error');
+        }
     });
 });
-
-    // ТИМЧАСОВА КНОПКА ДЛЯ РОЗРОБНИКА
-    let reloadBtn = document.getElementById('devReloadBtn');
-    if (reloadBtn) {
-        reloadBtn.addEventListener('click', () => {
-            chrome.runtime.reload(); // Ця команда повністю перезапускає розширення!
-        });
-    }
 });
 
 chrome.tabs.onActivated.addListener(() => {
