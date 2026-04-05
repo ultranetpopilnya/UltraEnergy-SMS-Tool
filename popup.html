@@ -33,6 +33,13 @@ body {
     font-family: 'TextFont';
 }
 
+button img, 
+.translit-inside-btn img,
+.inside-input-btn img {
+    pointer-events: none;
+    user-select: none; /* Додатково забороняємо виділення іконки як тексту */
+}
+
     :root {
     --gradient: #fff5df;        
     --ultra-color: #811e71;
@@ -102,52 +109,78 @@ body {
 .header-center { justify-content: center; }
 .input-center { text-align: center; margin-bottom: 10px; }
 
-/* Рядок для лейбла та кнопки трансліту */
-.label-row {
+/* Контейнер для позиціювання */
+.textarea-container {
+    position: relative;
+    width: 100%;
+    margin-top: 5px;
+}
+
+/* Оновлене поле: додаємо padding-right, щоб текст не залізав під кнопку */
+.textarea-container textarea {
+    width: 100%;
+    height: 115px;
+    resize: none;
+    padding: 10px 38px 10px 14px; /* 45px справа — це «безпечна зона» для кнопки */
+    line-height: 1.4;
+    display: block;
+}
+
+/* Кнопка без фону та бордера */
+.translit-inside-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 28px;
+    height: 28px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 16px; 
-    margin-bottom: 0px; /* Відступ між кнопкою і полем */
-}
-
-.label-row label {
-    margin: 0;
-    line-height: 1; /* Прибираємо невидиме "повітря" навколо тексту */
-    margin-left: 7px; 
-}
-
-/* Нова повноцінна, але маленька кнопка */
-.translit-btn-small {
-    background-color: transparent;
-    color: var(--text-color);
-    border: none; 
-    font-size: 13px;
-    font-family: inherit;
-    font-weight: 400;
+    justify-content: center;
+    padding: 0;
+    
+    /* Прибираємо фон та рамку */
+    background: transparent;
+    border: none;
+    
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    justify-content: center;   /* Центрує по горизонталі (вліво/вправо) */
-    margin-right: 0px; 
-    line-height: 1;            /* Забирає приховані відступи самого шрифту */
+    z-index: 10;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.7; /* Робимо іконку тьмянішою у спокої */
+    outline: none;
 }
 
-.translit-btn-small:hover {
- background: transparent;
+/* Ефект при наведенні */
+.translit-inside-btn:hover {
+    opacity: 1;
+    transform: scale(1.1); /* Трохи збільшуємо саму іконку */
+    background: transparent; /* Залишаємо прозорою */
 }
 
-.translit-btn-small:active {
-                transform: scale(0.96); 
-            transition: transform 0.05s ease-out;
+.translit-inside-btn:hover .img-icon-translit {
+    /* Легкий поворот іконки при наведенні для "магічного" ефекту */
+    transform: rotate(5deg);
 }
 
-/* Налаштування іконки для цієї кнопки */
+/* Ефект при натисканні */
+.translit-inside-btn:active {
+    transform: scale(0.9);
+    opacity: 0.8;
+}
+
+/* Розмір іконки */
 .img-icon-translit {
-    width: 16px;
-    height: 16px;
-    object-fit: contain;
+    width: 20px; /* Можна трохи збільшити, бо тепер немає рамки навколо */
+    height: 20px;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)); /* Додаємо легку тінь самій іконці */
+}
+
+/* Вимикаємо ефект скла для темної теми, бо фону немає */
+[data-theme="dark"] .translit-inside-btn {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
 }
 
         .sms-counter-bar {
@@ -294,7 +327,6 @@ body {
     transition: all 0.2s ease-in-out; 
 }
         input:focus, textarea:focus { border-color: var(--input-focus-border-color); outline: none; }
-        textarea { height: 116px; resize: none; background-color: var(--input-bg-color); line-height: 1.4; }
 
         /* КНОПКИ */
         button.btn { width: 100%; height: 42px; padding: 0 10px; margin-top: 16px; background-color: var(--primary-accent-color); font-family: inherit; color: white; border: 1px solid transparent; border-radius: 9999px; cursor: pointer;  font-weight: 400; font-size: 14px; transition: 0.2s ease-in-out; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -556,7 +588,7 @@ body {
 
 .inside-input-btn {
     position: absolute;
-    right: 7px;
+    right: 11px;
     /* Відцентровуємо по вертикалі з урахуванням відступу інпута */
     top: calc(50% + 2px);
     transform: translateY(-50%);
@@ -564,18 +596,19 @@ body {
     border: none;
     font-size: 14px;
     cursor: pointer;
-    padding: 5px;
     border-radius: 4px;
     transition: background-color 0.2s;
     z-index: 2;
+    margin: 0;
+    padding: 0;
 }
 
 .inside-input-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: none;
 }
 
 [data-theme="dark"] .inside-input-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: none;
 }
 
 /* Якщо кнопка видима, робимо відступ тексту, щоб він не залазив під кнопку */
@@ -692,7 +725,7 @@ input.has-dropdown {
     
     <!-- Кнопка-стрілочка (така сама, як у телефонах) -->
     <button id="templateDropdownBtn" class="inside-input-btn" title="Відкрити список шаблонів">
-        <img src="icons/down_arrow_3d.png" class="img-icon-sm" alt="Select">
+        <img src="icons/downwards_button_3d.png" class="img-icon-sm" alt="Select">
     </button>
     
     <!-- Ваше кастомне меню, куди будуть додаватись пункти -->
@@ -727,15 +760,17 @@ input.has-dropdown {
     </div>
 
 </div>
-        <!-- НОВИЙ БЛОК З КНОПКОЮ -->
         <div class="label-row">
-            <label for="message">Текст SMS:</label>
-            <button id="translitBtn" class="translit-btn-small" title="Змінити розкладку">
-                <span id="translitBtnText">Трансліт латиницею</span>
-                <img src="icons/input_latin_uppercase_3d.png" class="img-icon-translit" alt="Трансліт">
-            </button>
-        </div>
-        <textarea id="message"></textarea>
+    <label for="message">Текст SMS:</label>
+</div>
+
+<div class="textarea-container">
+    <textarea id="message" placeholder="Введіть повідомлення..."></textarea>
+    
+    <button id="translitBtn" class="translit-inside-btn" title="Транслітерувати текст">
+        <img src="icons/translate.png" class="img-icon-translit" alt="Трансліт">
+    </button>
+</div>
         <div class="sms-counter-bar">
             <div>Символів: <strong id="charCount">0</strong> (залишилось: <strong id="charLeft">160</strong>)&nbsp;</div>
             <div id="smsStatusWrapper">
@@ -798,7 +833,7 @@ input.has-dropdown {
     <input type="text" id="themeInput" readonly placeholder="Оберіть тему..." style="cursor: pointer; padding-right: 32px;" data-value="light">
     
     <button id="themeDropdownBtn" class="inside-input-btn" title="Оберіть тему">
-        <img src="icons/down_arrow_3d.png" class="img-icon-sm" alt="Select">
+        <img src="icons/downwards_button_3d.png" class="img-icon-sm" alt="Select">
     </button>
     
     <div id="themeDropdownMenu" class="floating-dropdown" style="display: none;">

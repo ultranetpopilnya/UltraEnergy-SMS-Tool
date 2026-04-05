@@ -44,18 +44,18 @@ function renderPhoneSelector(phones) {
     let menu = document.getElementById('phoneDropdownMenu');
     let phoneInput = document.getElementById('phone');
 
-    // Очищаємо попередні класи перед новим рендером
-badge.className = 'phone-badge'; 
-btn.className = 'inside-input-btn'; // скидаємо анімацію
+// Очищаємо попередні класи ТІЛЬКИ якщо елементи існують
+    if (badge) badge.className = 'phone-badge'; 
+    if (btn) btn.className = 'inside-input-btn'; // скидаємо анімацію
 
-if (currentNetwork === 'ultra') {
-    badge.classList.add('ultra-color'); // Додає фіолетовий колір Ultranet
-} else if (currentNetwork === 'energy') {
-    badge.classList.add('energy-color'); // Додає зелений колір ISP Energy
-}
+    if (currentNetwork === 'ultra' && badge) {
+        badge.classList.add('ultra-color'); // Додає фіолетовий колір Ultranet
+    } else if (currentNetwork === 'energy' && badge) {
+        badge.classList.add('energy-color'); // Додає зелений колір ISP Energy
+    }
 
-// Додаємо м'яку анімацію, щоб кнопка привертала увагу
-btn.classList.add('anim-bounce-down');
+    // Додаємо м'яку анімацію, щоб кнопка привертала увагу
+    if (btn) btn.classList.add('anim-bounce-down');
 
     // Якщо номерів 0 або 1 - ховаємо всі допоміжні елементи
     if (!phones || phones.length <= 1) {
@@ -488,54 +488,6 @@ function transliterateToCyrillic(text) {
     return finalRes;
 }
 
-// === ФУНКЦІЯ ТРАНСЛІТЕРАЦІЇ ЗГІДНО З КМУ №55 ===
-function transliterateToLatin(text) {
-    if (!text) return '';
-
-    // Зг згідно з правилами передається як Zgh (щоб не плутати з Ж - Zh)
-    text = text.replace(/Зг/g, 'Zgh').replace(/зг/g, 'zgh');
-
-    const strictMap = {
-        'А':'A', 'а':'a', 'Б':'B', 'б':'b', 'В':'V', 'в':'v', 'Г':'H', 'г':'h',
-        'Ґ':'G', 'ґ':'g', 'Д':'D', 'д':'d', 'Е':'E', 'е':'e', 'Ж':'Zh', 'ж':'zh',
-        'З':'Z', 'з':'z', 'И':'Y', 'и':'y', 'І':'I', 'і':'i', 'К':'K', 'к':'k',
-        'Л':'L', 'л':'l', 'М':'M', 'м':'m', 'Н':'N', 'н':'n', 'О':'O', 'о':'o',
-        'П':'P', 'п':'p', 'Р':'R', 'р':'r', 'С':'S', 'с':'s', 'Т':'T', 'т':'t',
-        'У':'U', 'у':'u', 'Ф':'F', 'ф':'f', 'Х':'Kh', 'х':'kh', 'Ц':'Ts', 'ц':'ts',
-        'Ч':'Ch', 'ч':'ch', 'Ш':'Sh', 'ш':'sh', 'Щ':'Shch','щ':'shch'
-    };
-
-    // Букви, що міняють значення залежно від позиції у слові
-    const positionalMap = {
-        'Є': { start: 'Ye', other: 'ie' }, 'є': { start: 'ye', other: 'ie' },
-        'Ї': { start: 'Yi', other: 'i' },  'ї': { start: 'yi', other: 'i' },
-        'Й': { start: 'Y',  other: 'i' },  'й': { start: 'y',  other: 'i' },
-        'Ю': { start: 'Yu', other: 'iu' }, 'ю': { start: 'yu', other: 'iu' },
-        'Я': { start: 'Ya', other: 'ia' }, 'я': { start: 'ya', other: 'ia' }
-    };
-
-    let result = '';
-    for (let i = 0; i < text.length; i++) {
-        let char = text[i];
-        
-        // Визначаємо, чи буква стоїть на початку слова (початок рядка або після пробілу/пунктуації)
-        let isStartOfWord = (i === 0) || /[\s\n\.,!?;:'"()\[\]{}\-]/.test(text[i - 1]);
-
-        if (strictMap[char] !== undefined) {
-            result += strictMap[char];
-        } else if (positionalMap[char] !== undefined) {
-            result += isStartOfWord ? positionalMap[char].start : positionalMap[char].other;
-        } else if (char === 'ь' || char === 'Ь' || char === '\'' || char === '’' || char === '`' || char === 'ʼ') {
-            // М'який знак та апострофи різних видів не відтворюються (пропускаємо)
-            continue;
-        } else {
-            // Всі інші символи (цифри, англійські букви, знаки) залишаємо як є
-            result += char;
-        }
-    }
-    return result;
-}
-
 function updatePreview() {
     if (!loadedTemplates || loadedTemplates.length === 0) return;
     
@@ -730,14 +682,15 @@ function runAutoParse() {
 
         // 3. ЯКЩО ЦЕ НЕ САЙТ БІЛІНГУ
         if (!isBillingSite) {
-            subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!'; // <-- ВАШ ОРИГІНАЛЬНИЙ ТЕКСТ
+            subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
             subTitle.className = 'warning-text'; 
             subTitle.style.display = 'block';
             
-            // Робимо недоступним поле шаблону
+            // Робимо недоступним поле шаблону, але залишаємо його пустим
             let tplInput = document.getElementById('templateInput');
             if (tplInput) {
-                tplInput.value = 'Шаблони недоступні';
+                tplInput.value = ''; // ТУТ ТЕПЕР ПУСТО
+                tplInput.placeholder = ''; // Прибираємо навіть підказку
                 tplInput.disabled = true;
                 tplInput.style.cursor = 'not-allowed';
             }
@@ -755,6 +708,7 @@ function runAutoParse() {
             if (tplInput) {
                 tplInput.disabled = false;
                 tplInput.style.cursor = 'pointer';
+                tplInput.placeholder = 'Оберіть шаблон...'; // Повертаємо підказку
             }
         }
 
@@ -926,18 +880,27 @@ if (themeInput) {
             phoneMenu.style.display = phoneMenu.style.display === 'none' ? 'block' : 'none';
         });
 
-        // Клік будь-де у вікні - закриває всі відкриті меню
-    document.addEventListener('click', (e) => {
-        if (phoneMenu && phoneMenu.style.display === 'block' && e.target !== phoneBtn && e.target !== phoneMenu) {
-            phoneMenu.style.display = 'none';
-        }
-        if (tplMenu && tplMenu.style.display === 'block' && e.target !== tplBtn && e.target !== tplMenu && e.target !== tplInput) {
-            tplMenu.style.display = 'none';
-        }
-        if (themeMenu && themeMenu.style.display === 'block' && e.target !== themeBtn && e.target !== themeMenu && e.target !== themeInput) {
-            themeMenu.style.display = 'none';
-        }
-    });
+        // Клік будь-де у вікні - закриває всі відкриті меню (БЕЗПЕЧНИЙ ВАРІАНТ)
+        document.addEventListener('click', (e) => {
+            // Меню телефонів
+            if (phoneMenu && phoneMenu.style.display === 'block' && !phoneBtn.contains(e.target) && !phoneMenu.contains(e.target)) {
+                phoneMenu.style.display = 'none';
+            }
+            // Меню шаблонів (шукаємо елементи прямо тут, щоб уникнути помилок області видимості)
+            const tMenu = document.getElementById('templateDropdownMenu');
+            const tBtn = document.getElementById('templateDropdownBtn');
+            const tInput = document.getElementById('templateInput');
+            if (tMenu && tMenu.style.display === 'block' && e.target !== tBtn && e.target !== tMenu && e.target !== tInput) {
+                tMenu.style.display = 'none';
+            }
+            // Меню тем
+            const thMenu = document.getElementById('themeDropdownMenu');
+            const thBtn = document.getElementById('themeDropdownBtn');
+            const thInput = document.getElementById('themeInput');
+            if (thMenu && thMenu.style.display === 'block' && e.target !== thBtn && e.target !== thMenu && e.target !== thInput) {
+                thMenu.style.display = 'none';
+            }
+        });
     }
     
     // === СЛУХАЧ КНОПКИ ТРАНСЛІТЕРАЦІЇ (ДВОСТОРОННІЙ) ===
