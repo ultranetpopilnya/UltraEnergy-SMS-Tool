@@ -150,7 +150,8 @@ async function sha256(message) {
 }
 
 let creds = { ultra: { token: '', sender: 'UltraNet' }, energy: { token: '', sender: 'ISP Energy' } };
-let currentNetwork = null; 
+let currentNetwork = null;
+let isValidSubscriber = false; 
 let loadedTemplates = []; 
 let selectedTemplateIndex = 0; // <-- ДОДАТИ: Пам'ятає, який шаблон обрано
 let extractedData = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
@@ -495,7 +496,6 @@ function updatePreview() {
     
     // Якщо шаблон ще не вибрано (ми не на білінгу) - поле пусте
     if (selectedIndex === null) {
-        document.getElementById('message').value = '';
         updateSmsCounter();
         updateTranslitBtnState();
         return;
@@ -537,6 +537,11 @@ function loadSettings() {
 }
 
 async function loadTemplatesFromFile(network, isBillingSite = true) {
+    if (!network) {
+        loadedTemplates = [];
+        selectedTemplateIndex = null;
+        return; 
+    }
     let fileName = network === 'ultra' ? 'templates_ultra.json' : 'templates_energy.json';
     try {
         let url = chrome.runtime.getURL(fileName);
@@ -682,6 +687,7 @@ function runAutoParse() {
 
         // 3. ЯКЩО ЦЕ НЕ САЙТ БІЛІНГУ
         if (!isBillingSite) {
+            isValidSubscriber = false;
             subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
             subTitle.className = 'warning-text'; 
             subTitle.style.display = 'block';
@@ -746,19 +752,36 @@ function runAutoParse() {
 
             // ЯКЩО ЦЕ БІЛІНГ, АЛЕ НЕ КАРТКА АБОНЕНТА
             if (!pageInfo.isSubscriberCard) {
-                subTitle.innerText = 'Перевіряйте дані перед відправкою смс!';
-                subTitle.className = 'subtitle-text'; // Стандартний сірий текст
+                isValidSubscriber = false; // Забороняємо відправку
+                
+                subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
+                subTitle.className = 'warning-text'; 
                 subTitle.style.display = 'block';
                 
-                // Очищаємо поля, як було в оригіналі, щоб не висіли старі дані
+                // РОБИМО ПОЛЕ ШАБЛОНІВ ПУСТИМ І НЕДОСТУПНИМ
+                let tplInput = document.getElementById('templateInput');
+                if (tplInput) {
+                    tplInput.value = ''; 
+                    tplInput.placeholder = ''; 
+                    tplInput.disabled = true;
+                    tplInput.style.cursor = 'not-allowed';
+                }
+                
+                selectedTemplateIndex = null; // <--- ДОДАНО: Скидаємо внутрішню пам'ять про шаблон
+                
+                // Очищаємо інші поля
                 document.getElementById('phone').value = '';
                 document.getElementById('amount').value = '';
-                updatePreview();
+                document.getElementById('message').value = ''; // <--- ЗМІНЕНО: Жорстко очищаємо поле повідомлення
+                
+                // updatePreview(); <--- ВИДАЛЕНО: Саме це викликало автоматичний запис тексту!
+                
                 updateSmsCounter();
                 return; 
             }
 
             // === ЯКЩО МИ ТУТ - ЗНАЧИТЬ ВІДКРИТА КАРТКА АБОНЕНТА ===
+            isValidSubscriber = true;
             subTitle.innerText = currentNetwork === 'ultra' ? 'Відправити SMS Ultranet' : 'Відправити SMS ISP Energy';
             subTitle.className = currentNetwork === 'ultra' ? 'ultra-color subtitle-text' : 'energy-color subtitle-text'; 
             subTitle.style.display = 'block';
@@ -1171,8 +1194,9 @@ function updateTranslitBtnState() {
     }
 
     // === ОСНОВНА ЛОГІКА ВІДПРАВКИ SMS ===
-    if (!currentNetwork) {
-        showButtonStatus('sendBtn', 'Відкрийте сторінку білінгу!', 'error');
+    // <--- ДОДАНО: БЛОКУЄМО, ЯКЩО НЕ В КАРТЦІ АБОНЕНТА --->
+    if (!isValidSubscriber) {
+        showButtonStatus('sendBtn', 'Відкрийте картку абонента!', 'error');
         return;
     }
 
