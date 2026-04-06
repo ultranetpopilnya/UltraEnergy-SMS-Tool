@@ -43,7 +43,7 @@ button img,
     :root {
     --gradient: #fff5df;        
     --ultra-color: #811e71;
-    --energy-color: #00a700;       
+    --energy-color: #008d00;       
     --bg-color: #f9f8f6;
     --text-color: #333;
     --text-color-inv: #ffffff;
@@ -67,7 +67,7 @@ button img,
 
         [data-theme="dark"] {
     --gradient: #29251c; 
-    --ultra-color: #994a8c;
+    --ultra-color: #b464a7;
     --energy-color: #81ca42;
     --bg-color: #292929;
     --text-color: #e0e0e0;
@@ -164,10 +164,38 @@ body::before {
     right: -6px;
     width: 10px;
     height: 10px;
-    background-color: var(--energy-color);
+    background-color: var(--danger-color); /* Змінено з зеленого на колір уваги (червоний) */
     border-radius: 50%;
     border: 2px solid var(--bg-color);
     animation: pulseNeon 1.5s infinite alternate ease-in-out;
+}
+
+/* Анімація пульсування для світлої теми (під колір --danger-color: rgb(191,26,26)) */
+@keyframes pulseNeon {
+    0% {
+        box-shadow: 0 0 0 0 rgba(191, 26, 26, 0.7);
+        transform: scale(0.95);
+    }
+    100% {
+        box-shadow: 0 0 6px 4px rgba(191, 26, 26, 0);
+        transform: scale(1.05);
+    }
+}
+
+/* Адаптація бейджа та тіні для темної теми (під її danger-color: rgb(235,151,25)) */
+[data-theme="dark"] .menu-badge {
+    animation: pulseNeonDark 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes pulseNeonDark {
+    0% {
+        box-shadow: 0 0 0 0 rgba(235, 151, 25, 0.7);
+        transform: scale(0.95);
+    }
+    100% {
+        box-shadow: 0 0 6px 4px rgba(235, 151, 25, 0);
+        transform: scale(1.05);
+    }
 }
 
 #mainMenuBtn {
@@ -307,12 +335,12 @@ body::before {
     min-height: 12px;
 }
 
-/* Кнопка оновлення — сучасна пігулка */
-.update-item {
+/* === КНОПКА ОНОВЛЕННЯ (Абсолютний пріоритет) === */
+.sidebar-menu button.menu-item.update-item {
     margin: 6px 10px 6px;
     width: calc(100% - 20px);
     background: linear-gradient(135deg, #007bff 0%, #0050cc 100%);
-    color: #fff;
+    color: #ffffff;
     border-radius: 14px;
     justify-content: center;
     font-size: 12.5px;
@@ -321,27 +349,29 @@ body::before {
     animation: updatePulse 2.2s infinite alternate ease-in-out;
     transform: translateX(0);
 }
-.update-item:hover {
+
+.sidebar-menu button.menu-item.update-item:hover {
     background: linear-gradient(135deg, #1a8cff 0%, #0060ee 100%);
-    color: #fff;
+    color: #ffffff;
     transform: scale(1.02);
     box-shadow: 0 6px 22px rgba(0, 123, 255, 0.55);
 }
-@keyframes updatePulse {
-    from { box-shadow: 0 4px 14px rgba(0, 123, 255, 0.32); }
-    to   { box-shadow: 0 4px 24px rgba(0, 123, 255, 0.58); }
-}
 
-[data-theme="dark"] .sidebar-menu .update-item {
+/* Для темної теми */
+[data-theme="dark"] .sidebar-menu button.menu-item.update-item {
     background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    color: #fff;
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
     animation: updatePulseDark 2.2s infinite alternate ease-in-out;
 }
 
-[data-theme="dark"] .sidebar-menu .update-item:hover {
+[data-theme="dark"] .sidebar-menu button.menu-item.update-item:hover {
     background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
     box-shadow: 0 6px 22px rgba(59, 130, 246, 0.55);
+}
+
+@keyframes updatePulse {
+    from { box-shadow: 0 4px 14px rgba(0, 123, 255, 0.32); }
+    to   { box-shadow: 0 4px 24px rgba(0, 123, 255, 0.58); }
 }
 
 @keyframes updatePulseDark {

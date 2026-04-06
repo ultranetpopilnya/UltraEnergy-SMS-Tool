@@ -2,11 +2,16 @@
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false })
   .catch((error) => console.error("Помилка налаштування панелі:", error));
 
-  // Відновлюємо значок після перезапуску service worker
+// Відновлюємо значок після перезапуску service worker, але одразу перевіряємо актуальність
 chrome.storage.local.get(['updateAvailable'], (data) => {
     if (data.updateAvailable) {
+        // Тимчасово показуємо бейдж (щоб користувач бачив його без затримок)
         chrome.action.setBadgeText({ text: '1' });
         chrome.action.setBadgeBackgroundColor({ color: '#811e71' });
+        
+        // Робимо фонову перевірку. Якщо версію на GitHub відкотили назад 
+        // або користувач вже оновився, бейдж сам зникне.
+        checkForUpdates(); 
     }
 });
 
