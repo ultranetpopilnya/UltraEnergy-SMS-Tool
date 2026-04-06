@@ -1078,15 +1078,35 @@ function updateTranslitBtnState() {
     // 1. Кнопка Налаштування
     const menuSettingsBtn = document.getElementById('menuSettingsBtn');
     if (menuSettingsBtn) {
-        menuSettingsBtn.addEventListener('click', () => {
-            closeMainMenu(); // Ховаємо сайдбар
-            document.getElementById('mainView').style.display = 'none';
-            document.getElementById('settingsView').className = 'anim-slide-right';
-            document.getElementById('settingsView').style.display = 'block';
-            document.getElementById('ultraToken').value = creds.ultra.token;
-            document.getElementById('energyToken').value = creds.energy.token;
-            document.getElementById('smsPriceInput').value = savedSmsPrice;
-            resetButton('saveSettingsBtn'); 
+        menuSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            
+            const mainMenuDropdown = document.getElementById('mainMenuDropdown');
+            const mainMenuBtn = document.getElementById('mainMenuBtn');
+            
+            // 1. Меню розтягується
+            mainMenuDropdown.classList.add('expanding-to-full');
+            mainMenuBtn.style.opacity = '0';
+
+            // 2. Чекаємо 300мс
+            setTimeout(() => {
+                document.getElementById('mainView').style.display = 'none';
+                
+                const settingsView = document.getElementById('settingsView');
+                settingsView.className = ''; 
+                settingsView.style.display = 'block'; 
+                settingsView.classList.add('anim-fade-slide'); // Поява налаштувань
+                
+                // 3. БЕЗПЕЧНЕ СКИДАННЯ МЕНЮ (ховаємо, скидаємо класи, повертаємо)
+                mainMenuDropdown.style.display = 'none';
+                mainMenuDropdown.classList.remove('open', 'expanding-to-full');
+                setTimeout(() => { mainMenuDropdown.style.display = 'flex'; }, 50);
+                
+                document.getElementById('ultraToken').value = creds.ultra.token;
+                document.getElementById('energyToken').value = creds.energy.token;
+                document.getElementById('smsPriceInput').value = savedSmsPrice;
+                resetButton('saveSettingsBtn'); 
+            }, 300);
         });
     }
 
@@ -1169,9 +1189,29 @@ function updateTranslitBtnState() {
 
     // === НОВА КНОПКА ЗАКРИТТЯ НАЛАШТУВАНЬ (ІКОНКА ХРЕСТИК) ===
     document.getElementById('closeSettingsIconBtn').addEventListener('click', () => {
-        document.getElementById('settingsView').style.display = 'none';
-        document.getElementById('mainView').className = 'anim-slide-left';
-        document.getElementById('mainView').style.display = 'block';
+        const settingsView = document.getElementById('settingsView');
+        const mainView = document.getElementById('mainView');
+        const mainMenuBtn = document.getElementById('mainMenuBtn');
+        
+        // 1. Екран налаштувань їде вправо
+        settingsView.className = 'anim-slide-out-right';
+        
+        setTimeout(() => {
+            settingsView.style.display = 'none';
+            
+            // 2. Головний екран заїжджає зліва
+            mainView.className = ''; 
+            mainView.style.display = 'block'; 
+            void mainView.offsetWidth; 
+            mainView.classList.add('anim-slide-left'); 
+            
+            // 3. Повертаємо гамбургер
+            mainMenuBtn.style.opacity = '1';
+            mainMenuBtn.classList.remove('menu-open');
+            
+            // Стискаємо вікно
+            setTimeout(() => { document.body.style.height = 'auto'; }, 10);
+        }, 250); // Час збігається з анімацією slideOutRight
     });
 
     document.getElementById('saveSettingsBtn').addEventListener('click', async () => {

@@ -88,22 +88,42 @@ button img,
     --settings-card-bg: #2d2d2d;
 }
 
-        html { height: fit-content; }
+html { 
+    height: auto; 
+}
 
-        body { 
+/* ОСНОВНИЙ BODY */
+body { 
     width: 376px;
-    height: fit-content; 
-    max-height: 600px; /* Рекомендовано додати для popup */
+    height: fit-content; /* Дозволяє вікну Chrome ідеально стискатись при виході з Налаштувань */
+    max-height: 600px; 
     overflow-y: auto; 
     overflow-x: hidden; 
-    padding: 16px 16px 0px 16px; 
+    padding: 16px 20px 0px 20px; 
     
-    /* Додаємо градієнт поверх основного кольору */
+    /* Повертаємо базовий колір сюди, щоб працювали теми */
     background-color: var(--bg-color); 
     
     color: var(--text-color); 
     margin: 0;
     opacity: 0; 
+    position: relative; /* Важливо для градієнта нижче */
+}
+
+/* === МАГІЯ ДЛЯ ГРАДІЄНТА === */
+/* Цей блок створює градієнт, який "прибитий" до екрану і НІКОЛИ не обрізається */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: linear-gradient(135deg, rgba(129, 30, 113, 0.08) 0%, rgba(249, 248, 246, 0) 40%, rgba(249, 248, 246, 0) 60%, rgba(0, 167, 0, 0.08) 100%);
+    z-index: -1; /* Ховаємо під текст */
+    pointer-events: none;
+}
+
+/* Градієнт для темної теми */
+[data-theme="dark"] body::before {
+    background-image: linear-gradient(135deg, rgba(153, 74, 140, 0.12) 0%, rgba(41, 41, 41, 0) 40%, rgba(41, 41, 41, 0) 60%, rgba(129, 202, 66, 0.12) 100%);
 }
 
 /* === ІКОНКА ГАМБУРГЕР === */
@@ -129,6 +149,14 @@ button img,
 .icon-btn.menu-open .hamburger-icon span:nth-child(2) { opacity: 0; }
 .icon-btn.menu-open .hamburger-icon span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
+/* Стиль для самої SVG іконки */
+.back-svg-icon {
+    display: block;
+    transition: transform 0.2s ease, color 0.2s ease;
+    /* Колір береться зі змінної теми */
+    color: var(--header-color); 
+}
+
 /* === БЕЙДЖ ОНОВЛЕННЯ (Крапка) === */
 .menu-badge {
     position: absolute;
@@ -142,10 +170,10 @@ button img,
     animation: pulseNeon 1.5s infinite alternate ease-in-out;
 }
 
-/* Піднімаємо кнопку гамбургера, щоб вона завжди була поверх виїжджаючого меню */
 #mainMenuBtn {
     position: relative;
     z-index: 1005; 
+    transition: opacity 0.2s ease-out; /* ДОДАНО: щоб хрестик плавно зникав */
 }
 
 /* === БОКОВЕ МЕНЮ === */
@@ -162,9 +190,37 @@ button img,
     padding: 0;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* ЗМІНЕНО: тепер анімується ширина і колір фону */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    
     overflow-y: auto;
 }
+/* === ІЛЮЗІЯ ПЕРЕТВОРЕННЯ МЕНЮ В ЕКРАН НАЛАШТУВАНЬ === */
+.sidebar-menu.expanding-to-full {
+    width: 376px !important; 
+    transform: translateX(-240px) !important; /* ФІКС: залишаємо -240px, щоб правий край не відривався від екрану */
+    background-color: var(--bg-color) !important; 
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-left: none !important;
+}
+
+.sidebar-menu.expanding-to-full > * {
+    opacity: 0 !important;
+    transition: opacity 0.15s ease-out;
+    pointer-events: none;
+}
+
+/* Анімація: Налаштування від'їжджають вправо (якщо ви її ще не додали) */
+@keyframes slideOutRight {
+    0% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(100%); opacity: 0; }
+}
+.anim-slide-out-right {
+    animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 [data-theme="dark"] .sidebar-menu { 
     background: rgba(28, 28, 36, 0.85);
     backdrop-filter: blur(28px) saturate(180%);
@@ -292,8 +348,6 @@ button img,
     from { box-shadow: 0 4px 14px rgba(59, 130, 246, 0.28); }
     to   { box-shadow: 0 4px 24px rgba(59, 130, 246, 0.52); }
 }
-
-
 
 .header-center { justify-content: center; }
 .input-center { text-align: center; margin-bottom: 10px; }
@@ -465,10 +519,6 @@ button img,
     margin-right: 4px; /* Відступ між кулькою і текстом */
 }
 
-        #mainView {
-    padding-bottom: 0px; /* Повертаємо повітря знизу для головного екрану */
-}
-
         /* ІНПУТИ ТА ПОЛЯ */
         label { 
      font-weight: 400; 
@@ -500,8 +550,46 @@ button img,
         input:focus, textarea:focus { border-color: var(--input-focus-border-color); outline: none; }
 
         /* КНОПКИ */
-        button.btn { width: 100%; height: 42px; padding: 0 10px; margin-top: 16px; background-color: var(--primary-accent-color); font-family: inherit; color: white; border: 1px solid transparent; border-radius: 9999px; cursor: pointer;  font-weight: 400; font-size: 14px; transition: 0.2s ease-in-out; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        button:disabled { background-color: var(--btn-disabled-bg) !important; color: var(--subtitle-color); cursor: not-allowed; box-shadow: none; }
+        /* === УНІВЕРСАЛЬНІ КНОПКИ ДІЙ === */
+        button.btn { 
+            width: 100%; 
+            height: 42px; 
+            padding: 16px 16px 16px 16px; 
+            margin-top: 16px; 
+            background-color: var(--primary-accent-color); 
+            font-family: inherit; 
+            color: white; 
+            border: none; 
+            border-radius: 9999px; 
+            cursor: pointer;  
+            font-weight: 600; /* Зробив трохи жирнішим для кращого вигляду (Bold) */
+            font-size: 14px; 
+            letter-spacing: 0.02em;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+
+        /* Ефект при наведенні на будь-яку кнопку */
+        button.btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        /* Вимкнена кнопка */
+        button:disabled, button.btn:disabled:hover { 
+            background-color: var(--btn-disabled-bg) !important; 
+            color: var(--subtitle-color); 
+            cursor: not-allowed; 
+            box-shadow: none !important;
+            filter: none;
+            transform: none;
+        }
         
         button.btn-success, button.btn-success:disabled { background-color: rgba(56, 193, 113, 0.103) !important; border: 1px solid var(--success-color) !important; color: #20874b !important; cursor: default !important; }
         button.btn-error, button.btn-error:disabled { background-color: rgba(220, 53, 69, 0.15) !important; border: 1px solid var(--danger-color) !important; color: var(--danger-color); cursor: pointer !important; }
@@ -566,10 +654,13 @@ button img,
             100% { opacity: 1; transform: translateX(0); }
         }
 
-        /* М'яка поява при першому кліку на розширення */
-@keyframes popIn {
-    0% { opacity: 0; transform: scale(0.97) translateY(4px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
+/* Нова ідеальна анімація для контенту Налаштувань */
+@keyframes fadeSlideIn {
+    0% { opacity: 0; transform: translateX(15px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+.anim-fade-slide {
+    animation: fadeSlideIn 0.25s ease-out forwards;
 }
 
 /* Класи, якими ми будемо керувати з JS */
@@ -594,42 +685,44 @@ button img,
     margin: 16px 0; 
 }
 
-/* ========================================= */
-/* === УНІВЕРСАЛЬНИЙ ФУТЕР З ГРАДІЄНТОМ ==== */
-/* ========================================= */
+/* === ПРИЛИПАЮЧИЙ ФУТЕР (GLASSMORPHISM) === */
 .sticky-footer {
     position: sticky;
-    bottom: 0px; 
-    display: flex;
-    justify-content: center;
-    padding-top: 32px; 
-    padding-bottom: 16px; 
-    margin-top: -16px; 
-    margin-left: -16px;
-    margin-right: -16px;
-    margin-bottom: 0px;
-    z-index: 90;
-    pointer-events: none;
+    bottom: 0;
+    margin-left: -20px; 
+    margin-right: -20px; /* Повертаємо ідеально на всю ширину */
+    padding: 16px;
+    margin-top: 10px;      
     
-    background: linear-gradient(
-    to bottom, 
-    transparent 0%,
-    transparent 20%,    
-    var(--gradient) 90% 
-);
+    background: rgba(249, 248, 246, 0.85); 
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(0, 0, 0, 0.05); 
+    z-index: 100; 
 }
 
-/* Стандартна кнопка в футері (наприклад, кнопка "Зберегти" в налаштуваннях) */
+/* Ефект скла для темної теми футера */
+[data-theme="dark"] .sticky-footer {
+    background: rgba(28, 28, 32, 0.30);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .sticky-footer .btn {
     width: 270px;
-    max-width: 270px; /* Опціонально, щоб не розтягувалась занадто сильно */
-    margin: 0 auto; /* Центрування */
-    border-radius: 9999px; 
+    margin: 0 auto !important;
     pointer-events: auto;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15); 
+    box-shadow: 0 4px 14px rgba(0, 123, 255, 0.25); 
 }
+
+.sticky-footer .btn:hover {
+    box-shadow: 0 6px 18px rgba(0, 123, 255, 0.4); 
+}
+
 [data-theme="dark"] .sticky-footer .btn {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.212);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+}
+[data-theme="dark"] .sticky-footer .btn:hover {
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.4);
 }
 
 
@@ -678,11 +771,11 @@ button img,
 }
 
 .inside-input-btn:hover {
-    background-color: none;
+    background-color: transparent;
 }
 
 [data-theme="dark"] .inside-input-btn:hover {
-    background-color: none;
+    background-color: transparent;
 }
 
 /* Якщо кнопка видима, робимо відступ тексту, щоб він не залазив під кнопку */
@@ -772,7 +865,7 @@ input.has-dropdown {
         
         <!-- ДОДАНО ОБГОРТКУ STICKY-FOOTER -->
         <div class="sticky-footer">
-            <button class="btn" id="loginBtn" style="width: calc(100% - 32px) !important;">Увійти</button>
+            <button class="btn" id="loginBtn">Увійти</button>
         </div>
     </div>
 
@@ -792,7 +885,7 @@ input.has-dropdown {
 
         <!-- ДОДАНО ОБГОРТКУ STICKY-FOOTER -->
         <div class="sticky-footer">
-            <button class="btn" id="onboardSaveBtn" style="width: calc(100% - 32px) !important;">Зберегти та почати</button>
+            <button class="btn" id="onboardSaveBtn">Зберегти та почати</button>
         </div>
     </div>
 
@@ -880,7 +973,7 @@ input.has-dropdown {
         </div>
 
         <div class="sticky-footer">
-            <button class="btn" id="sendBtn" style="width: calc(100% - 32px) !important;">Відправити SMS</button>
+            <button class="btn" id="sendBtn">Відправити SMS</button>
         </div>
     </div> <!-- ОСЬ ЦЕЙ DIV ЗАКРИВАЄ mainView. ВІН ДУЖЕ ВАЖЛИВИЙ! -->
 
@@ -893,7 +986,12 @@ input.has-dropdown {
                 <div class="subtitle-text">Керування розширенням</div>
             </div>
             <div class="header-icons">
-                <button class="icon-btn icon-btn-danger" id="closeSettingsIconBtn" title="Повернутись назад"><img src="icons/right_arrow_curving_left_3d.png" class="img-icon" style="margin:0;" alt="Back"></button>
+                <button class="icon-btn back-btn" id="closeSettingsIconBtn" title="Повернутись назад">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="back-svg-icon">
+        <path d="M9 14L5 10L9 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M5 10H13C15.7614 10 18 12.2386 18 15C18 17.7614 15.7614 20 13 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+</button>
             </div>
         </div>
         
