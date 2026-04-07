@@ -584,6 +584,24 @@ function updatePreview() {
     updateSmsCounter(); 
 }
 
+// === ФУНКЦІЯ: ОНОВЛЕННЯ ТЕКСТУ НА КНОПЦІ ТРАНСЛІТУ ===
+function updateTranslitBtnState() {
+    const btnText = document.getElementById('translitBtnText');
+    const msgEl = document.getElementById('message');
+    if (!btnText || !msgEl) return;
+    
+    const text = msgEl.value;
+    
+    // Якщо пусто або є хоч одна кирилична літера -> Пропонуємо "в Lat"
+    const hasCyrillic = /[а-яА-ЯєЄїЇіІґҐ]/.test(text);
+    
+    if (text === '' || hasCyrillic) {
+        btnText.innerText = 'Трансліт латиницею';
+    } else {
+        btnText.innerText = 'Трансліт кирилицею';
+    }
+}
+
 function loadSettings() {
     chrome.storage.local.get(['encUltra', 'encEnergy', 'autoClose', 'smsPrice'], async (data) => {
         // Непомітно для користувача розшифровуємо токени
@@ -1009,24 +1027,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateTranslitBtnState(); // <--- ДОДАНО: одразу міняє напис після кліку
         });
     }
-
-    // === ФУНКЦІЯ: ОНОВЛЕННЯ ТЕКСТУ НА КНОПЦІ ТРАНСЛІТУ ===
-function updateTranslitBtnState() {
-    const btnText = document.getElementById('translitBtnText');
-    const msgEl = document.getElementById('message');
-    if (!btnText || !msgEl) return;
-    
-    const text = msgEl.value;
-    
-    // Якщо пусто або є хоч одна кирилична літера -> Пропонуємо "в Lat"
-    const hasCyrillic = /[а-яА-ЯєЄїЇіІґҐ]/.test(text);
-    
-    if (text === '' || hasCyrillic) {
-        btnText.innerText = 'Трансліт латиницею';
-    } else {
-        btnText.innerText = 'Трансліт кирилицею';
-    }
-}
 
 // === ЛОГІКА БОКОВОГО МЕНЮ (САЙДБАР) ===
     
