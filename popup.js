@@ -220,7 +220,7 @@ let loadedTemplates = [];
 let selectedTemplateIndex = 0; // <-- ДОДАТИ: Пам'ятає, який шаблон обрано
 let extractedData = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
 let autoCloseEnabled = true;
-let savedSmsPrice = 1.29;
+let savedSmsPrices = { ultra: 1.28, energy: 1.29 };
 const isSidePanel = window.location.search.includes('panel=1');
 
 async function scrapeAbillsData() {
@@ -446,10 +446,9 @@ function updateSmsCounter() {
     if (charLeftEl) charLeftEl.innerText = left;
 
     // 5. Підрахунок вартості
-    let price = 1.29; 
-    if (typeof savedSmsPrice !== 'undefined' && !isNaN(savedSmsPrice)) {
-        price = parseFloat(savedSmsPrice);
-    }
+    let price = 0; 
+    if (currentNetwork === 'ultra') price = savedSmsPrices.ultra;
+    else if (currentNetwork === 'energy') price = savedSmsPrices.energy;
     
     let totalCost = (parts * price).toFixed(2); 
     
@@ -603,12 +602,13 @@ function updateTranslitBtnState() {
 }
 
 function loadSettings() {
-    chrome.storage.local.get(['encUltra', 'encEnergy', 'autoClose', 'smsPrice'], async (data) => {
+    chrome.storage.local.get(['encUltra', 'encEnergy', 'autoClose', 'smsPriceUltra', 'smsPriceEnergy'], async (data) => {
         // Непомітно для користувача розшифровуємо токени
         if (data.encUltra) creds.ultra.token = await decryptToken(data.encUltra);
         if (data.encEnergy) creds.energy.token = await decryptToken(data.encEnergy);
         
-        savedSmsPrice = data.smsPrice !== undefined ? parseFloat(data.smsPrice) : 1.29;
+        savedSmsPrices.ultra = data.smsPriceUltra !== undefined ? parseFloat(data.smsPriceUltra) : 1.28;
+        savedSmsPrices.energy = data.smsPriceEnergy !== undefined ? parseFloat(data.smsPriceEnergy) : 1.29;
         autoCloseEnabled = data.autoClose !== undefined ? data.autoClose : true;
         
         let toggle = document.getElementById('autoCloseToggle');
@@ -1104,8 +1104,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 document.getElementById('ultraToken').value = creds.ultra.token;
                 document.getElementById('energyToken').value = creds.energy.token;
-                document.getElementById('smsPriceInput').value = savedSmsPrice;
-                resetButton('saveSettingsBtn'); 
+                document.getElementById('smsPriceUltra').value = savedSmsPrices.ultra;
+                document.getElementById('smsPriceEnergy').value = savedSmsPrices.energy;
+                resetButton('saveSettingsBtn');
             }, 300);
         });
     }
@@ -1219,8 +1220,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let eT = document.getElementById('energyToken').value.trim();
         let aC = document.getElementById('autoCloseToggle').checked; 
         let selectedTheme = document.getElementById('themeInput').dataset.value || 'light';
-        let priceVal = parseFloat(document.getElementById('smsPriceInput').value);
-        let sPrice = isNaN(priceVal) ? 1.29 : priceVal; 
+        
+        let pUltra = parseFloat(document.getElementById('smsPriceUltra').value);
+        let pEnergy = parseFloat(document.getElementById('smsPriceEnergy').value);
+        let sPriceUltra = isNaN(pUltra) ? 1.28 : pUltra; 
+        let sPriceEnergy = isNaN(pEnergy) ? 1.29 : pEnergy;
 
         showButtonStatus('saveSettingsBtn', 'Захищаємо дані...', 'loading');
 
@@ -1232,12 +1236,14 @@ document.addEventListener('DOMContentLoaded', () => {
             encEnergy: encE, 
             autoClose: aC, 
             theme: selectedTheme, 
-            smsPrice: sPrice 
+            smsPriceUltra: sPriceUltra,
+            smsPriceEnergy: sPriceEnergy
         }, () => {
             creds.ultra.token = uT; 
             creds.energy.token = eT; 
             autoCloseEnabled = aC; 
-            savedSmsPrice = sPrice; 
+            savedSmsPrices.ultra = sPriceUltra; 
+            savedSmsPrices.energy = sPriceEnergy;
             
             document.body.setAttribute('data-theme', selectedTheme);
             

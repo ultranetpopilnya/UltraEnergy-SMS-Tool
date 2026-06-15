@@ -495,8 +495,8 @@ body::before {
         ::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-hover); }
 
     ::-webkit-scrollbar-track {
-    margin-top: 7px;    /* Скролбар починається нижче заокруглення */
-    margin-bottom: 7px; /* Скролбар закінчується вище заокруглення */
+    margin-top: 0px;    /* Скролбар починається нижче заокруглення */
+    margin-bottom: 0px; /* Скролбар закінчується вище заокруглення */
     background: transparent;
 }
         
@@ -745,8 +745,10 @@ body::before {
 /* Прибираємо стрілки для Chrome, Safari, Edge */
 #amount::-webkit-outer-spin-button,
 #amount::-webkit-inner-spin-button,
-#smsPriceInput::-webkit-outer-spin-button,
-#smsPriceInput::-webkit-inner-spin-button {
+#smsPriceUltra::-webkit-outer-spin-button,
+#smsPriceUltra::-webkit-inner-spin-button,
+#smsPriceEnergy::-webkit-outer-spin-button,
+#smsPriceEnergy::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
@@ -1040,9 +1042,17 @@ input.has-dropdown {
         <!-- === РИСКА РОЗДІЛЕННЯ === -->
         <hr class="setting-divider">
         
-        <div class="setting-subtitle">Тарифікація</div>
-        <label for="smsPriceInput">Вартість 1 SMS (грн):</label>
-        <input type="number" id="smsPriceInput" step="0.01" min="0" value="1.29" placeholder="1.29">
+        <div class="setting-subtitle">Вартість 1 SMS (грн)</div>
+        <div class="input-row" style="margin-top: 5px;">
+            <div class="input-col">
+                <label for="smsPriceUltra" style="margin-left: 2px;"><span class="ultra-color">●</span> Ultranet</label>
+                <input type="number" id="smsPriceUltra" step="0.01" min="0" placeholder="1.28">
+            </div>
+            <div class="input-col">
+                <label for="smsPriceEnergy" style="margin-left: 2px;"><span class="energy-color">●</span> ISP Energy</label>
+                <input type="number" id="smsPriceEnergy" step="0.01" min="0" placeholder="1.29">
+            </div>
+        </div>
         <hr class="setting-divider">
 
         <!-- === ДРУГИЙ БЛОК === -->
