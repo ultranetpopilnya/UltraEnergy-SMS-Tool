@@ -217,7 +217,7 @@ let creds = { ultra: { token: '', sender: 'UltraNet' }, energy: { token: '', sen
 let currentNetwork = null;
 let isValidSubscriber = false; 
 let loadedTemplates = []; 
-let selectedTemplateIndex = 0; // <-- ДОДАТИ: Пам'ятає, який шаблон обрано
+let selectedTemplateIndex = null;
 let extractedData = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
 let autoCloseEnabled = true;
 let savedSmsPrices = { ultra: 1.28, energy: 1.29 };
@@ -603,9 +603,31 @@ function updateTranslitBtnState() {
 
 function loadSettings() {
     chrome.storage.local.get(['encUltra', 'encEnergy', 'autoClose', 'smsPriceUltra', 'smsPriceEnergy'], async (data) => {
-        // Непомітно для користувача розшифровуємо токени
-        if (data.encUltra) creds.ultra.token = await decryptToken(data.encUltra);
-        if (data.encEnergy) creds.energy.token = await decryptToken(data.encEnergy);
+        let decryptionError = false;
+
+        // Безпечно розшифровуємо токени з перевіркою
+        if (data.encUltra) {
+            let dec = await decryptToken(data.encUltra);
+            if (dec) creds.ultra.token = dec;
+            else decryptionError = true;
+        }
+        
+        if (data.encEnergy) {
+            let dec = await decryptToken(data.encEnergy);
+            if (dec) creds.energy.token = dec;
+            else decryptionError = true;
+        }
+
+        // ЯКЩО ТОКЕНИ БУЛИ, АЛЕ НЕ РОЗШИФРУВАЛИСЬ
+        if (decryptionError) {
+            console.warn("⚠️ Увага: Не вдалося розшифрувати токени. Можливо змінився ключ пристрою.");
+            let subTitle = document.getElementById('subTitle');
+            if (subTitle) {
+                subTitle.innerText = 'Ключ безпеки скинуто! Оновіть токени в Налаштуваннях.';
+                subTitle.className = 'warning-text anim-bounce-down'; 
+                subTitle.style.display = 'block';
+            }
+        }
         
         savedSmsPrices.ultra = data.smsPriceUltra !== undefined ? parseFloat(data.smsPriceUltra) : 1.28;
         savedSmsPrices.energy = data.smsPriceEnergy !== undefined ? parseFloat(data.smsPriceEnergy) : 1.29;
@@ -923,13 +945,14 @@ function showUpdateUI(newVersion) {
     const badge = document.getElementById('menuUpdateBadge');
     const updateBtn = document.getElementById('menuUpdateBtn');
     const versionEl = document.getElementById('newVersionText');
-    const DOWNLOAD_URL = 'https://github.com/ultranetpopilnya/UltraEnergy-SMS-Tool/archive/refs/heads/main.zip';
+    // Звідси можна видалити DOWNLOAD_URL, бо він тут більше не потрібен
 
     if (badge) badge.style.display = 'block';
     if (versionEl && newVersion) versionEl.innerText = newVersion;
     if (updateBtn) {
         updateBtn.style.display = 'flex';
-        updateBtn.onclick = () => window.open(DOWNLOAD_URL, '_blank');
+        // ВИДАЛЯЄМО або коментуємо цей рядок, щоб не було подвійного завантаження:
+        // updateBtn.onclick = () => window.open(DOWNLOAD_URL, '_blank'); 
     }
 }
 
@@ -1382,12 +1405,38 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 });
 
-chrome.tabs.onActivated.addListener(() => {
-    if (isSidePanel) checkAuthAndParse();
+// === БЕЗПЕЧНИЙ ВИКЛИК ПАРСИНГУ ДЛЯ SIDE PANEL ===
+function safeCheckAuthAndParse(tab) {
+    if (!tab || !tab.url) return;
+    
+    // 1. Ігноруємо системні сторінки Chrome, порожні вкладки та налаштування
+    if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
+        return; 
+    }
+
+    // 2. Перевіряємо, чи це взагалі наші сайти білінгу
+    const isBillingUrl = tab.url.includes('bill.ultranetgroup.com.ua') || tab.url.includes('bill.ispenergy.com.ua');
+
+    // Запускаємо логіку тільки якщо ми на потрібних сайтах
+    if (isBillingUrl) {
+        checkAuthAndParse();
+    }
+}
+
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+    if (isSidePanel) {
+        try {
+            const tab = await chrome.tabs.get(activeInfo.tabId);
+            safeCheckAuthAndParse(tab);
+        } catch (e) {
+            console.error("Помилка отримання вкладки:", e);
+        }
+    }
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    // Реагуємо тільки коли сторінка повністю завантажилась
     if (changeInfo.status === 'complete' && tab.active && isSidePanel) {
-        checkAuthAndParse();
+        safeCheckAuthAndParse(tab);
     }
 });
