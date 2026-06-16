@@ -222,6 +222,9 @@ let extractedData = { contract: '11500xxxxx', password: 'xxxxx', phones: [], cre
 let autoCloseEnabled = true;
 let savedSmsPrices = { ultra: 1.28, energy: 1.29 };
 const isSidePanel = window.location.search.includes('panel=1');
+if (isSidePanel) {
+    document.body.classList.add('side-panel-mode');
+}
 
 async function scrapeAbillsData() {
     let result = { contract: '11500xxxxx', password: 'xxxxx', phones: [], credit: '' };
