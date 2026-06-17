@@ -134,7 +134,7 @@ body::before {
     width: 22px;
     height: 16px;
     cursor: pointer;
-    margin: 0 0 0 50px;
+    margin: 0px;
 }
 .hamburger-icon span {
     display: block;
@@ -312,7 +312,7 @@ body::before {
 
 /* Заголовок сайдбару */
 .sidebar-header {
-    padding: 6px 18px 12px;
+    padding: 6px 18px 16px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     margin-bottom: 4px;
 }
@@ -320,7 +320,7 @@ body::before {
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 .sidebar-header-title {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -386,24 +386,30 @@ body::before {
 .textarea-container {
     position: relative;
     width: 100%;
-    margin-top: 5px;
+    margin-top: 3px;
 }
 
 /* Оновлене поле: додаємо padding-right, щоб текст не залізав під кнопку */
 .textarea-container textarea {
     width: 100%;
-    height: 115px;
+    height: 126px;
     resize: none;
-    padding: 10px 38px 10px 14px; /* 45px справа — це «безпечна зона» для кнопки */
+    padding: 10px 34px 7px 10px; /* 45px справа — це «безпечна зона» для кнопки */
     line-height: 1.4;
     display: block;
+}
+
+textarea::-webkit-scrollbar-track {
+    margin-top: 10px;    
+    margin-bottom: 10px; 
+    background: transparent;
 }
 
 /* Кнопка без фону та бордера */
 .translit-inside-btn {
     position: absolute;
     top: 5px;
-    right: 5px;
+    right: 7px;
     width: 28px;
     height: 28px;
     display: flex;
@@ -460,7 +466,7 @@ body::before {
             align-items: center;
             font-size: 13px; 
             color: var(--subtitle-color);
-            margin-top: 8px;
+            margin: 9px 0  12px 0;
             padding: 0 0px;
             font-weight: 400;
             white-space: nowrap; /* ВАЖЛИВО: Забороняє тексту переноситись на новий рядок */
@@ -503,27 +509,79 @@ body::before {
 .ultra-color { color: var(--ultra-color) !important; }
 .energy-color { color: var(--energy-color) !important; }
 
-        /* ШАПКА */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid var(--input-border-color); padding-bottom: 10px; min-height: 56px; }
-        .title-container { display: flex; flex-direction: column; justify-content: center; height: 100%; }
+.header { 
+    display: flex; 
+    justify-content: space-between; 
+    
+    /* ВАЖЛИВО: Прив'язуємо все до верху. Тепер заголовок ніколи не поповзе вгору */
+    align-items: center;
+    
+    margin-bottom: 16px; 
+    border-bottom: 1px solid var(--input-border-color); 
+    
+    /* Шапка має мінімальну висоту, але МОЖЕ рости вниз, якщо тексту багато */
+    min-height: 60px; 
+    height: auto; 
+    
+    /* Відступ зверху фіксує позицію H3. Відступ знизу "дихає" */
+    padding: 0px 0 16px 0; 
+}
 
-        h3 { 
+.title-container { 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    padding-bottom: 0; /* Жорсткий відступ від верху шапки. h3 завжди буде тут */
+    height: auto; 
+    width: 100%; /* Щоб довгий текст не наїжджав на меню */
+}
+
+h3 { 
     margin: 0; 
     font-size: 20px; 
     color: var(--header-color); 
     font-weight: 400; 
-    
-    /* ДОДАНО: Ідеальне вирівнювання по центру */
     display: flex; 
     align-items: center; 
-    gap: 6px; /* Точна відстань між картинкою і текстом */
+    gap: 6px; 
 }
 
-        .subtitle-text { font-size: 13px; color: var(--subtitle-color); margin-top: 2px;  font-weight: 400; }
-        .warning-text { font-size: 13px; font-weight: 400; margin-top: 2px; display: none; color: var(--warning-text);}
+.subtitle-text { 
+    font-size: 13px; 
+    color: var(--subtitle-color); 
+    margin-top: 2px;  
+    font-weight: 400; 
+}
+
+.warning-text { 
+    font-size: 13px; 
+    font-weight: 400; 
+    margin-top: 2px; 
+    display: none; 
+    color: var(--warning-text);
+}
         
-        .header-icons { display: flex; gap: 15px; align-items: center; }
-        .icon-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 0; color: #555; transition: 0.2s; }
+/* Блок з іконкою меню */
+.header-icons { 
+    display: flex; 
+    align-items: center; /* Центруємо іконки між собою, якщо їх буде кілька */
+    gap: 15px; 
+    margin-top: 0; /* Прибрали милицю, яка опускала іконки вниз */
+}
+
+.icon-btn { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: none; 
+    border: none; 
+    font-size: 18px; 
+    cursor: pointer; 
+    padding: 0; 
+    color: #555; 
+    transition: 0.2s; 
+}
+
         .icon-btn-danger:hover { color: var(--danger-color); }
         
     .img-icon {
@@ -549,25 +607,19 @@ body::before {
     margin-right: 4px; /* Відступ між кулькою і текстом */
 }
 
-        /* ІНПУТИ ТА ПОЛЯ */
-        label { 
-     font-weight: 400; 
+/* === ІНПУТИ ТА ПОЛЯ === */
+label { 
+    font-weight: 400; 
     font-size: 13px; 
-    margin-top: 16px; 
+    margin-top: 16px; /* Відстань від попереднього поля */
+    margin-bottom: 3px; /* Чіткий відступ до свого поля */
     display: block; 
     color: var(--text-color);
-     margin-left: 7px;
+    margin-left: 9px; /* Вирівняно під закруглення інпута */
 }
 
-/* Зробимо виняток для першого лейблу у вікні (після шапки), щоб він не відступав занадто сильно */
-.header + label {
-    margin-top: 8px;
-}
-    input, textarea { 
+input, textarea { 
     width: 100%; 
-    /* ЗМІНЕНО: було 4px. 6px дасть міліметр повітря між заголовком і полем */
-    margin-top: 5px; 
-    /* ЗМІНЕНО: було 8px. Тепер 10px зверху/знизу і 14px по боках. Текст не буде "тертися" об круглі кути */
     padding: 9px 14px; 
     background-color: var(--input-bg-color); 
     border: 1px solid var(--input-border-color); 
@@ -576,6 +628,11 @@ body::before {
     font-size: 13px; 
     color: var(--text-color); 
     transition: all 0.2s ease-in-out; 
+}
+
+.input-row label {
+    margin-top: 0; /* Рядок сам робить відступ зверху */
+    margin-bottom: 3px; /* Зберігаємо відстань до поля */
 }
         input:focus, textarea:focus { border-color: var(--input-focus-border-color); outline: none; }
 
@@ -671,9 +728,25 @@ body::before {
 
         /* НАЛАШТУВАННЯ ТА РОЗДІЛЮВАЧІ */
         #settingsView { display: none; }
-        .network-title { margin: 16px 0 5px 0; font-size: 13px; padding-bottom: 2px; font-weight: 400; display: flex; align-items: center; gap: 2px; margin-left: 7px;}
+        .network-title { 
+    margin: 16px 0 6px 0; /* Зробили відступ вниз 6px, як у label */
+    font-size: 13px; 
+    padding-bottom: 2px; 
+    font-weight: 400; 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; /* Збільшили відстань між кулькою і текстом */
+    margin-left: 8px; /* Синхронізовано з label */
+}
         
-        .setting-subtitle { font-size: 13px; font-weight: 400; color: var(--header-color); margin-bottom: 10px; margin-left: 7px;}
+.setting-subtitle { 
+    font-size: 13px; 
+    font-weight: 400; 
+    color: var(--header-color); 
+    margin-top: 16px;
+    margin-bottom: 10px; 
+    margin-left: 8px; /* Синхронізовано з label */
+}
 
         .input-row {
             display: flex;
@@ -696,12 +769,6 @@ body::before {
         /* Права колонка (Сума) займає 40% */
         .input-row .input-col:last-child {
             flex: 5;
-        }
-
-        /* Прибираємо margin-top у лейблів всередині цього рядка, 
-           оскільки відступ тепер задає сам .input-row */
-        .input-row label {
-            margin-top: 0;
         }
 
         /* === ТАКТИЛЬНІ ВІДЧУТТЯ ДЛЯ КНОПОК === */
@@ -792,7 +859,7 @@ body::before {
     position: absolute;
     right: 11px;
     /* Відцентровуємо по вертикалі з урахуванням відступу інпута */
-    top: calc(50% + 2px);
+    top: calc(50%);
     transform: translateY(-50%);
     background: none;
     border: none;

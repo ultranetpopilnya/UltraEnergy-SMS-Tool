@@ -790,6 +790,8 @@ function runAutoParse() {
             subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
             subTitle.className = 'warning-text'; 
             subTitle.style.display = 'block';
+
+            if (typeof renderPhoneSelector === 'function') renderPhoneSelector([]);
             
             // Робимо недоступним поле шаблону, але залишаємо його пустим
             let tplInput = document.getElementById('templateInput');
@@ -856,6 +858,8 @@ function runAutoParse() {
                 subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
                 subTitle.className = 'warning-text'; 
                 subTitle.style.display = 'block';
+
+                if (typeof renderPhoneSelector === 'function') renderPhoneSelector([]);
                 
                 // РОБИМО ПОЛЕ ШАБЛОНІВ ПУСТИМ І НЕДОСТУПНИМ
                 let tplInput = document.getElementById('templateInput');
@@ -1410,20 +1414,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // === БЕЗПЕЧНИЙ ВИКЛИК ПАРСИНГУ ДЛЯ SIDE PANEL ===
 function safeCheckAuthAndParse(tab) {
-    if (!tab || !tab.url) return;
-    
-    // 1. Ігноруємо системні сторінки Chrome, порожні вкладки та налаштування
-    if (tab.url.startsWith('chrome://') || tab.url.startsWith('edge://') || tab.url.startsWith('about:')) {
-        return; 
-    }
-
-    // 2. Перевіряємо, чи це взагалі наші сайти білінгу
-    const isBillingUrl = tab.url.includes('bill.ultranetgroup.com.ua') || tab.url.includes('bill.ispenergy.com.ua');
-
-    // Запускаємо логіку тільки якщо ми на потрібних сайтах
-    if (isBillingUrl) {
-        checkAuthAndParse();
-    }
+    // Дозволяємо головній функції самій вирішувати, що робити.
+    // Вона знає: якщо це не білінг — треба все очистити і заблокувати шаблони
+    // (Точно так само, як це робить звичайний Popup)
+    checkAuthAndParse();
 }
 
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
