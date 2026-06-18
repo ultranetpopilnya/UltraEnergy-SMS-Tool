@@ -55,24 +55,33 @@ function initDropdown(btnId, menuId, inputId, onSelect, options = {}) {
         }
     };
 
-    // Зберігаємо посилання на close прямо на елементі (для закриття ззовні)
+    // Зберігаємо посилання прямо на елементі (щоб глобальний клік знав, що закривати)
     menu._ddClose = self.close;
+    menu._ddBtn = btn;
+    menu._ddInput = input;
 
     btn.addEventListener('click', (e) => self.toggle(e));
     if (input) input.addEventListener('click', (e) => self.toggle(e));
 
-    // Клік поза меню — закрити
-    document.addEventListener('click', (e) => {
-        if (menu.style.display === 'block'
-            && !btn.contains(e.target)
-            && !menu.contains(e.target)
-            && e.target !== input) {
-            self.close();
-        }
-    });
-
     return self;
 }
+
+// === ЄДИНИЙ ГЛОБАЛЬНИЙ ОБРОБНИК КЛІКІВ ДЛЯ ВСІХ ДРОПДАУНІВ ===
+document.addEventListener('click', (e) => {
+    document.querySelectorAll('.floating-dropdown').forEach(menu => {
+        if (menu.style.display === 'block') {
+            const btn = menu._ddBtn;
+            const input = menu._ddInput;
+            
+            // Якщо клік був не по меню, не по його кнопці і не по його інпуту — закриваємо
+            if (!menu.contains(e.target) && 
+                (!btn || !btn.contains(e.target)) && 
+                e.target !== input) {
+                menu._ddClose?.();
+            }
+        }
+    });
+});
 
 // Глобальні екземпляри дропдаунів (потрібні в renderPhoneSelector та loadTemplatesFromFile)
 let phoneDropdown, templateDropdown, themeDropdown;
@@ -556,34 +565,37 @@ function transliterateToCyrillic(text) {
 }
 
 function updatePreview() {
-    if (!loadedTemplates || loadedTemplates.length === 0) return;
-    
-    let selectedIndex = selectedTemplateIndex;
-    
-    // Якщо шаблон ще не вибрано (ми не на білінгу) - поле пусте
-    if (selectedIndex === null) {
+    if (!loadedTemplates || loadedTemplates.length === 0 || selectedTemplateIndex === null) {
         updateSmsCounter();
         updateTranslitBtnState();
         return;
     }
     
-    if (!loadedTemplates[selectedIndex]) {
-        document.getElementById('message').value = 'Шаблон не знайдено';
-        updateSmsCounter(); 
-        return;
+    let msgEl = document.getElementById('message');
+    let amount = document.getElementById('amount').value || 'xxxx';
+    
+    // МАГІЯ ТУТ: Перевіряємо, чи змінився індекс шаблону з минулого разу
+    let isTemplateSwitched = (msgEl.dataset.lastRenderedIndex !== String(selectedTemplateIndex));
+    
+    // Якщо ти вибрав ІНШИЙ шаблон АБО це перше завантаження
+    if (isTemplateSwitched || !msgEl.dataset.activeTemplate) {
+        
+        // Завантажуємо новий шаблон під капот
+        msgEl.dataset.activeTemplate = loadedTemplates[selectedTemplateIndex].text
+            .replace(/{contract}/g, extractedData.contract)
+            .replace(/{password}/g, extractedData.password);
+            
+        // Запам'ятовуємо, який саме шаблон ми завантажили
+        msgEl.dataset.lastRenderedIndex = String(selectedTemplateIndex);
     }
-
-    let text = loadedTemplates[selectedIndex].text;  
-    let amount = document.getElementById('amount').value;
-    if (!amount) amount = 'xxxx';
     
-    text = text.replace(/{amount}/g, amount);
-    text = text.replace(/{contract}/g, extractedData.contract);
-    text = text.replace(/{password}/g, extractedData.password);
-    
-    document.getElementById('message').value = text;
+    // Підставляємо суму
+    if (msgEl.dataset.activeTemplate) {
+        msgEl.value = msgEl.dataset.activeTemplate.replace(/{amount}/g, amount);
+    }
     
     updateSmsCounter(); 
+    updateTranslitBtnState(); 
 }
 
 // === ФУНКЦІЯ: ОНОВЛЕННЯ ТЕКСТУ НА КНОПЦІ ТРАНСЛІТУ ===
@@ -697,23 +709,23 @@ let currentPageMarker = null;
 function saveStateToCache() {
     if (!currentPageMarker) return;
 
+    let msgEl = document.getElementById('message');
     let state = {
         extractedData: extractedData,
         amount: document.getElementById('amount').value,
         phone: document.getElementById('phone').value,
         templateIndex: selectedTemplateIndex,
-        message: document.getElementById('message').value,
-        timestamp: Date.now() // Ставимо час, щоб знати, хто найновіший
+        message: msgEl.value,
+        activeTemplate: msgEl.dataset.activeTemplate || '', 
+        // ДОДАЙ ЦЕЙ РЯДОК:
+        lastRenderedIndex: msgEl.dataset.lastRenderedIndex || '',
+        timestamp: Date.now()
     };
 
-    // Використовуємо пам'ять СЕСІЇ (очиститься при закритті браузера)
     chrome.storage.session.get(['subscribersCache'], (storage) => {
         let cache = storage.subscribersCache || {};
-        
-        // Зберігаємо або оновлюємо поточного абонента
         cache[currentPageMarker] = state;
 
-        // Контроль ліміту: якщо більше 10 записів - видаляємо найстаріший
         let keys = Object.keys(cache);
         if (keys.length > 10) {
             let oldestKey = keys.reduce((oldest, current) => {
@@ -721,37 +733,65 @@ function saveStateToCache() {
             });
             delete cache[oldestKey];
         }
-
         chrome.storage.session.set({ subscribersCache: cache });
     });
 }
 
 function restoreStateFromCache(cachedState) {
     extractedData = cachedState.extractedData;
-    
-    // ОСЬ ТУТ ПРОСТО ВИКЛИКАЄМО НОВУ ФУНКЦІЮ:
-    renderPhoneSelector(extractedData.phones);
-
+    if (typeof renderPhoneSelector === 'function') renderPhoneSelector(extractedData.phones);
     document.getElementById('phone').value = cachedState.phone || '';
     document.getElementById('amount').value = cachedState.amount || '';
-    // Відновлюємо індекс (може бути null)
     selectedTemplateIndex = cachedState.templateIndex !== undefined ? cachedState.templateIndex : null;
     
-    // Візуально повертаємо назву шаблону в поле
     let tplInput = document.getElementById('templateInput');
     if (tplInput) {
         if (selectedTemplateIndex !== null && loadedTemplates[selectedTemplateIndex]) {
             tplInput.value = loadedTemplates[selectedTemplateIndex].title;
         } else {
-            tplInput.value = ''; // Якщо індекс null, залишаємо пустим
+            tplInput.value = ''; 
         }
     }
-    document.getElementById('message').value = cachedState.message || '';
     
-    // ДОДАНО: Примусово запускаємо підрахунок після відновлення тексту!
+    let msgEl = document.getElementById('message');
+    msgEl.value = cachedState.message || '';
+    msgEl.dataset.activeTemplate = cachedState.activeTemplate || ''; 
+    // ДОДАЙ ЦЕЙ РЯДОК:
+    msgEl.dataset.lastRenderedIndex = cachedState.lastRenderedIndex !== undefined ? String(cachedState.lastRenderedIndex) : '';
+    
     updateSmsCounter();
     updateTranslitBtnState();
     saveStateToCache(); 
+}
+
+function lockUI(messageText) {
+    isValidSubscriber = false;
+    let subTitle = document.getElementById('subTitle');
+    if (subTitle) {
+        subTitle.innerText = messageText;
+        subTitle.className = 'warning-text'; 
+        subTitle.style.display = 'block';
+    }
+
+    if (typeof renderPhoneSelector === 'function') renderPhoneSelector([]);
+    
+    let tplInput = document.getElementById('templateInput');
+    let tplBtn = document.getElementById('templateDropdownBtn');
+    if (tplInput) {
+        tplInput.value = ''; tplInput.placeholder = ''; 
+        tplInput.disabled = true; tplInput.style.cursor = 'not-allowed';
+    }
+    if (tplBtn) {
+        tplBtn.style.pointerEvents = 'none'; tplBtn.style.opacity = '0.5';
+    }
+    
+    selectedTemplateIndex = null;
+    document.getElementById('phone').value = '';
+    document.getElementById('amount').value = '';
+    document.getElementById('message').value = ''; 
+    
+    updateSmsCounter();
+    updateTranslitBtnState();
 }
 
 // ГОЛОВНА ФУНКЦІЯ ПАРСИНГУ ТА ЗАВАНТАЖЕННЯ
@@ -786,36 +826,20 @@ function runAutoParse() {
 
         // 3. ЯКЩО ЦЕ НЕ САЙТ БІЛІНГУ
         if (!isBillingSite) {
-            isValidSubscriber = false;
-            subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
-            subTitle.className = 'warning-text'; 
-            subTitle.style.display = 'block';
-
-            if (typeof renderPhoneSelector === 'function') renderPhoneSelector([]);
-            
-            // Робимо недоступним поле шаблону, але залишаємо його пустим
-            let tplInput = document.getElementById('templateInput');
-            if (tplInput) {
-                tplInput.value = ''; // ТУТ ТЕПЕР ПУСТО
-                tplInput.placeholder = ''; // Прибираємо навіть підказку
-                tplInput.disabled = true;
-                tplInput.style.cursor = 'not-allowed';
-            }
-            
-            // Очищаємо інші поля, але НЕ блокуємо їх (щоб працювали команди test / up)
-            document.getElementById('phone').value = '';
-            document.getElementById('amount').value = '';
-            document.getElementById('message').value = '';
-            
-            updateSmsCounter();
+            lockUI('Перевіряйте дані абонента перед відправкою смс!');
             return; 
         } else {
             // РОЗБЛОКОВУЄМО поле шаблону, якщо повернулися на білінг
             let tplInput = document.getElementById('templateInput');
+            let tplBtn = document.getElementById('templateDropdownBtn');
             if (tplInput) {
                 tplInput.disabled = false;
                 tplInput.style.cursor = 'pointer';
-                tplInput.placeholder = 'Оберіть шаблон...'; // Повертаємо підказку
+                tplInput.placeholder = 'Оберіть шаблон...';
+            }
+            if (tplBtn) {
+                tplBtn.style.pointerEvents = 'auto';
+                tplBtn.style.opacity = '1';
             }
         }
 
@@ -853,33 +877,7 @@ function runAutoParse() {
 
             // ЯКЩО ЦЕ БІЛІНГ, АЛЕ НЕ КАРТКА АБОНЕНТА
             if (!pageInfo.isSubscriberCard) {
-                isValidSubscriber = false; // Забороняємо відправку
-                
-                subTitle.innerText = 'Перевіряйте дані абонента перед відправкою смс!';
-                subTitle.className = 'warning-text'; 
-                subTitle.style.display = 'block';
-
-                if (typeof renderPhoneSelector === 'function') renderPhoneSelector([]);
-                
-                // РОБИМО ПОЛЕ ШАБЛОНІВ ПУСТИМ І НЕДОСТУПНИМ
-                let tplInput = document.getElementById('templateInput');
-                if (tplInput) {
-                    tplInput.value = ''; 
-                    tplInput.placeholder = ''; 
-                    tplInput.disabled = true;
-                    tplInput.style.cursor = 'not-allowed';
-                }
-                
-                selectedTemplateIndex = null; // <--- ДОДАНО: Скидаємо внутрішню пам'ять про шаблон
-                
-                // Очищаємо інші поля
-                document.getElementById('phone').value = '';
-                document.getElementById('amount').value = '';
-                document.getElementById('message').value = ''; // <--- ЗМІНЕНО: Жорстко очищаємо поле повідомлення
-                
-                // updatePreview(); <--- ВИДАЛЕНО: Саме це викликало автоматичний запис тексту!
-                
-                updateSmsCounter();
+                lockUI('Перевіряйте дані абонента перед відправкою смс!');
                 return; 
             }
 
@@ -1014,11 +1012,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     templateDropdown = initDropdown('templateDropdownBtn', 'templateDropdownMenu', 'templateInput',
         (value) => {
+            // Якщо вибрано дійсно ІНШИЙ шаблон (а не той самий повторно)
+            if (selectedTemplateIndex !== value) {
+                // Очищаємо поле суми
+                document.getElementById('amount').value = '';
+            }
+            
             selectedTemplateIndex = value;
             updatePreview();
             saveStateToCache();
         },
-        { canOpen: () => !!currentNetwork }
+        // ДОДАНО: && isValidSubscriber
+        { canOpen: () => !!currentNetwork && isValidSubscriber } 
     );
 
     themeDropdown = initDropdown('themeDropdownBtn', 'themeDropdownMenu', 'themeInput',
@@ -1145,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuPinBtnText = document.getElementById('menuPinBtn');
     if (menuPinBtnText) {
         if (isSidePanel) {
-            menuPinBtnText.innerHTML = `<img src="icons/left_arrow_3d.png" class="menu-icon"> Закрити панель`;
+            menuPinBtnText.innerHTML = `<img src="icons/pushpin_3d.png" class="menu-icon">Відкріпити від панелі`;
         }
         menuPinBtnText.addEventListener('click', () => {
             closeMainMenu();
@@ -1298,7 +1303,19 @@ document.addEventListener('DOMContentLoaded', () => {
         safeSaveToCache();
     });
     document.getElementById('phone').addEventListener('input', safeSaveToCache);
-    document.getElementById('message').addEventListener('input', () => {
+    document.getElementById('message').addEventListener('input', (e) => {
+        let amount = document.getElementById('amount').value || 'xxxx';
+        let text = e.target.value;
+        
+        // Магія: коли ти щось дописуєш руками, ми знаходимо поточну суму в тексті 
+        // і перетворюємо її назад на змінну {amount} під капотом.
+        let escapedAmount = amount.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Шукаємо суму як окреме число (щоб випадково не зачепити цифри в номері договору)
+        let regex = new RegExp('(?<!\\d)' + escapedAmount + '(?!\\d)', 'g');
+        
+        // Зберігаємо твій написаний текст як новий активний шаблон!
+        e.target.dataset.activeTemplate = text.replace(regex, '{amount}');
+        
         safeSaveToCache();
         updateSmsCounter(); 
         updateTranslitBtnState(); 
@@ -1402,9 +1419,11 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(error => {
         clearTimeout(timeoutId);
         console.error("Помилка відправки SMS:", error);
-        // ДОДАНО: Обробка помилки таймауту
+        
         if (error.name === 'AbortError') {
             showButtonStatus('sendBtn', 'Сервер TurboSMS не відповідає!', 'error');
+        } else if (error.message.includes('не JSON')) {
+            showButtonStatus('sendBtn', 'Помилка сервера TurboSMS (502/503)', 'error');
         } else {
             showButtonStatus('sendBtn', 'Помилка з\'єднання з API!', 'error');
         }
