@@ -899,21 +899,28 @@ input.has-dropdown {
 /* === ПЛАВАЮЧЕ МЕНЮ === */
 .floating-dropdown {
     position: absolute;
-    top: calc(100% + 4px); /* Трохи відступаємо від поля вниз */
+    top: calc(100% + 4px);
     left: 0;
     width: 100%;
     height: auto;
-    background-color: var(--input-bg-color); /* Такий самий фон, як у полів */
-    border: 1px solid var(--input-border-color); /* Така сама сіра рамка */
-    border-radius: 12px; /* Таке саме закруглення */
-    box-shadow: 0 4px 14px rgba(0,0,0,0.15); /* Тінь, щоб меню виділялось */
-    z-index: 100;
+    max-height: 180px; /* ДОДАНО: Обмеження висоти. Якщо пунктів багато - з'явиться скрол */
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--input-border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    z-index: 9999; /* ЗМІНЕНО: Підняв з 100 до 9999, щоб ТОЧНО перекривало кнопку "Відправити" */
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 4px 0; /* Невеликий відступ зверху і знизу всередині */
+    padding: 4px 0;
 
     transform-origin: top center;
     animation: dropdownOpen 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.floating-dropdown::-webkit-scrollbar-track {
+    margin-top: 10px;    
+    margin-bottom: 10px; 
+    background: transparent;
 }
 
 @keyframes dropdownOpen {

@@ -572,26 +572,38 @@ function updatePreview() {
     }
     
     let msgEl = document.getElementById('message');
-    let amount = document.getElementById('amount').value || 'xxxx';
+    let amountInput = document.getElementById('amount');
     
-    // МАГІЯ ТУТ: Перевіряємо, чи змінився індекс шаблону з минулого разу
+    // Беремо оригінальний текст обраного шаблону
+    let rawTemplateText = loadedTemplates[selectedTemplateIndex].text;
+    
     let isTemplateSwitched = (msgEl.dataset.lastRenderedIndex !== String(selectedTemplateIndex));
     
-    // Якщо ти вибрав ІНШИЙ шаблон АБО це перше завантаження
     if (isTemplateSwitched || !msgEl.dataset.activeTemplate) {
-        
-        // Завантажуємо новий шаблон під капот
-        msgEl.dataset.activeTemplate = loadedTemplates[selectedTemplateIndex].text
+        // Підставляємо договір і пароль (які ми щойно зчитали з сайту)
+        msgEl.dataset.activeTemplate = rawTemplateText
             .replace(/{contract}/g, extractedData.contract)
             .replace(/{password}/g, extractedData.password);
             
-        // Запам'ятовуємо, який саме шаблон ми завантажили
         msgEl.dataset.lastRenderedIndex = String(selectedTemplateIndex);
     }
+
+    // === РОЗУМНА ЛОГІКА СУМИ ===
+    if (rawTemplateText.includes('{amount}')) {
+        // Якщо поле пусте, беремо суму, яку зчитали з сайту (extractedData.credit)
+        if (!amountInput.value && extractedData.credit) {
+            amountInput.value = extractedData.credit;
+        }
+    } else {
+        // Якщо в цьому шаблоні сума не потрібна взагалі - стираємо поле
+        amountInput.value = '';
+    }
     
-    // Підставляємо суму
+    let amountToUse = amountInput.value || 'xxxx';
+    
+    // Підставляємо фінальну суму в повідомлення
     if (msgEl.dataset.activeTemplate) {
-        msgEl.value = msgEl.dataset.activeTemplate.replace(/{amount}/g, amount);
+        msgEl.value = msgEl.dataset.activeTemplate.replace(/{amount}/g, amountToUse);
     }
     
     updateSmsCounter(); 
@@ -1011,13 +1023,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     templateDropdown = initDropdown('templateDropdownBtn', 'templateDropdownMenu', 'templateInput',
-        (value) => {
-            // Якщо вибрано дійсно ІНШИЙ шаблон (а не той самий повторно)
-            if (selectedTemplateIndex !== value) {
-                // Очищаємо поле суми
-                document.getElementById('amount').value = '';
-            }
-            
+        (value) => {   
             selectedTemplateIndex = value;
             updatePreview();
             saveStateToCache();
