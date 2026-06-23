@@ -665,7 +665,6 @@ input, textarea {
         /* Ефект при наведенні на будь-яку кнопку */
         button.btn:hover {
             filter: brightness(1.1);
-            transform: translateY(-1px);
         }
 
         /* Вимкнена кнопка */
@@ -908,7 +907,7 @@ input.has-dropdown {
     border: 1px solid var(--input-border-color);
     border-radius: 12px;
     box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-    z-index: 9999; /* ЗМІНЕНО: Підняв з 100 до 9999, щоб ТОЧНО перекривало кнопку "Відправити" */
+    z-index: 999; /* ЗМІНЕНО: Підняв з 100 до 9999, щоб ТОЧНО перекривало кнопку "Відправити" */
     overflow-y: auto;
     overflow-x: hidden;
     padding: 4px 0;
