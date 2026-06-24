@@ -167,53 +167,73 @@ function renderPhoneSelector(phones) {
     }
 }
 
-// === ФУНКЦІЯ: СТАТУСИ ПРЯМО НА КНОПЦІ ===
+// === MODERN BLUR-TRANSITION ДЛЯ КНОПОК ===
 function showButtonStatus(btnId, message, type) {
     const btn = document.getElementById(btnId);
     if (!btn) return;
 
-    if (!btn.dataset.originalText) {
-        btn.dataset.originalText = btn.innerText;
+    if (!btn.dataset.originalHtml) {
+        btn.dataset.originalHtml = btn.innerHTML;
     }
 
-    btn.classList.remove('btn-success', 'btn-error', 'btn-loading');
+    const icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : (type === 'loading' ? '⏳' : ''));
+    const newHtml = `<div class="btn-content content-hidden"><span>${icon}</span> <span>${message}</span></div>`;
 
-    let icon = '';
-    if (type === 'success') {
-        btn.classList.add('btn-success');
-        icon = '✅';
-        btn.disabled = true; 
-    } else if (type === 'error') {
-        btn.classList.add('btn-error');
-        icon = '❌';
-        btn.disabled = false; 
-    } else if (type === 'loading') {
-        btn.classList.add('btn-loading');
-        icon = '⏳';
-        btn.disabled = true; 
+    // 1. Огортаємо поточний текст (якщо ще ні) і додаємо клас приховування
+    let currentContent = btn.querySelector('.btn-content');
+    if (!currentContent) {
+        btn.innerHTML = `<div class="btn-content">${btn.innerHTML}</div>`;
+        currentContent = btn.querySelector('.btn-content');
     }
-
-    btn.innerHTML = `<span class="emoji-icon">${icon}</span> <span>${message}</span>`;
     
+    currentContent.classList.add('content-hidden');
+
+    // 2. Коли старий текст розмився (через 150мс)
+    setTimeout(() => {
+        // Змінюємо колір кнопки
+        btn.classList.remove('btn-success', 'btn-error', 'btn-loading');
+        if (type === 'success') btn.classList.add('btn-success');
+        if (type === 'error') btn.classList.add('btn-error');
+        if (type === 'loading') btn.classList.add('btn-loading');
+
+        // Вставляємо новий прихований текст
+        btn.innerHTML = newHtml;
+        const newContent = btn.querySelector('.btn-content');
+
+        // 3. Короткий таймаут, щоб браузер встиг застосувати стилі, і "проявляємо" текст
+        setTimeout(() => {
+            newContent.classList.remove('content-hidden');
+        }, 30);
+
+        btn.disabled = (type === 'loading' || type === 'success');
+    }, 200);
+
     if (type !== 'loading') {
         setTimeout(() => {
-            if (btn.innerText.includes(message)) {
-                resetButton(btnId);
-            }
-        }, 4000); 
+            if (btn.innerText.includes(message)) resetButton(btnId);
+        }, 3000);
     }
 }
 
 function resetButton(btnId) {
     const btn = document.getElementById(btnId);
-    if (!btn) return;
-    btn.classList.remove('btn-success', 'btn-error', 'btn-loading');
-    if (btn.dataset.originalText) {
-        btn.innerText = btn.dataset.originalText;
-    }
-    btn.disabled = false;
+    if (!btn || !btn.dataset.originalHtml) return;
+
+    const currentContent = btn.querySelector('.btn-content');
+    if (currentContent) currentContent.classList.add('content-hidden');
+
+    setTimeout(() => {
+        btn.classList.remove('btn-success', 'btn-error', 'btn-loading');
+        btn.innerHTML = `<div class="btn-content content-hidden">${btn.dataset.originalHtml}</div>`;
+        
+        setTimeout(() => {
+            const newContent = btn.querySelector('.btn-content');
+            if (newContent) newContent.classList.remove('content-hidden');
+        }, 30);
+        
+        btn.disabled = false;
+    }, 300);
 }
-// ===========================================
 
 async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
@@ -1148,7 +1168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('smsPriceUltra').value = savedSmsPrices.ultra;
                 document.getElementById('smsPriceEnergy').value = savedSmsPrices.energy;
                 resetButton('saveSettingsBtn');
-            }, 300);
+            }, 200);
         });
     }
 
@@ -1257,45 +1277,62 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
-        let uT = document.getElementById('ultraToken').value.trim();
-        let eT = document.getElementById('energyToken').value.trim();
-        let aC = document.getElementById('autoCloseToggle').checked; 
-        let selectedTheme = document.getElementById('themeInput').dataset.value || 'light';
+    const btn = document.getElementById('saveSettingsBtn');
+    
+    // 1. Просто міняємо колір кнопки на "завантаження" (вона стане блідо-блакитною)
+    // Текст при цьому залишається на місці!
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+
+    let uT = document.getElementById('ultraToken').value.trim();
+    let eT = document.getElementById('energyToken').value.trim();
+    let aC = document.getElementById('autoCloseToggle').checked; 
+    let selectedTheme = document.getElementById('themeInput').dataset.value || 'light';
+    
+    let pUltra = parseFloat(document.getElementById('smsPriceUltra').value);
+    let pEnergy = parseFloat(document.getElementById('smsPriceEnergy').value);
+    let sPriceUltra = isNaN(pUltra) ? 1.28 : pUltra; 
+    let sPriceEnergy = isNaN(pEnergy) ? 1.29 : pEnergy;
+
+    let encU = await encryptToken(uT);
+    let encE = await encryptToken(eT);
+
+    chrome.storage.local.set({ 
+        encUltra: encU, 
+        encEnergy: encE, 
+        autoClose: aC, 
+        theme: selectedTheme, 
+        smsPriceUltra: sPriceUltra,
+        smsPriceEnergy: sPriceEnergy
+    }, () => {
+        creds.ultra.token = uT; 
+        creds.energy.token = eT; 
+        autoCloseEnabled = aC; 
+        savedSmsPrices.ultra = sPriceUltra; 
+        savedSmsPrices.energy = sPriceEnergy;
         
-        let pUltra = parseFloat(document.getElementById('smsPriceUltra').value);
-        let pEnergy = parseFloat(document.getElementById('smsPriceEnergy').value);
-        let sPriceUltra = isNaN(pUltra) ? 1.28 : pUltra; 
-        let sPriceEnergy = isNaN(pEnergy) ? 1.29 : pEnergy;
+        document.body.setAttribute('data-theme', selectedTheme);
+        
+        // 2. Коли збережено — міняємо колір на зелений (успіх)
+        // Напис "Зберегти налаштування" все ще на кнопці!
+        btn.classList.remove('btn-loading');
+        btn.classList.add('btn-success');
 
-        showButtonStatus('saveSettingsBtn', 'Захищаємо дані...', 'loading');
+        // 3. Робимо коротку паузу, щоб користувач побачив, що колір змінився на зелений
+        setTimeout(() => {
+            // 4. Повертаємось на головний екран
+            document.getElementById('closeSettingsIconBtn').click(); 
 
-        let encU = await encryptToken(uT);
-        let encE = await encryptToken(eT);
-
-        chrome.storage.local.set({ 
-            encUltra: encU, 
-            encEnergy: encE, 
-            autoClose: aC, 
-            theme: selectedTheme, 
-            smsPriceUltra: sPriceUltra,
-            smsPriceEnergy: sPriceEnergy
-        }, () => {
-            creds.ultra.token = uT; 
-            creds.energy.token = eT; 
-            autoCloseEnabled = aC; 
-            savedSmsPrices.ultra = sPriceUltra; 
-            savedSmsPrices.energy = sPriceEnergy;
-            
-            document.body.setAttribute('data-theme', selectedTheme);
-            
-            showButtonStatus('saveSettingsBtn', 'Збережено!', 'success');
+            // 5. Коли екран вже поїхав, тихо повертаємо звичайний колір кнопки
             setTimeout(() => {
-                document.getElementById('closeSettingsIconBtn').click(); 
-                resetButton('saveSettingsBtn');
-                updateSmsCounter(); 
-            }, 1000); 
-        });
+                btn.classList.remove('btn-success');
+                btn.disabled = false;
+                updateSmsCounter();
+            }, 500);
+            
+        }, 400); // Час, скільки кнопка буде зеленою перед виходом
     });
+});
 
     // Захист від перенавантаження Chrome Storage (Debounce)
     let saveTimeout;
