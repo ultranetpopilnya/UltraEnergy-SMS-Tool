@@ -773,81 +773,88 @@ button.btn:active {
 /* --- УСПІХ (Зелена) --- */
 button.btn.btn-success, 
 button.btn.btn-success:disabled { 
-    background-color: rgba(56, 193, 113, 0.103) !important; 
+    /* Використовуємо суцільний пастельний колір замість rgba, щоб нічого не просвічувалось */
+    background-color: #e8f7ec !important; 
     border: 1px solid var(--success-color) !important; 
     color: #20874b !important; 
     cursor: default !important; 
-    box-shadow: 0 4px 14px rgba(56, 193, 113, 0.25) !important; /* Зелене світіння */
+    box-shadow: 0 4px 14px rgba(56, 193, 113, 0.25) !important;
     transform: scale(1) !important; 
 }
 
 /* --- ПОМИЛКА / ВІДКРИТИ КАРТКУ --- */
 button.btn.btn-error, 
 button.btn.btn-error:disabled { 
-    background-color: rgba(220, 53, 69, 0.15) !important; 
+    background-color: #fbe8e8 !important; 
     border: 1px solid var(--danger-color) !important; 
     color: var(--danger-color) !important; 
     cursor: pointer !important; 
-    box-shadow: 0 4px 14px rgba(191, 26, 26, 0.25) !important; /* Червоне світіння */
+    box-shadow: 0 4px 14px rgba(191, 26, 26, 0.25) !important;
 }
 
 /* --- ЗАВАНТАЖЕННЯ (Синя) --- */
 button.btn.btn-loading, 
 button.btn.btn-loading:disabled { 
-    background-color: rgba(0, 123, 255, 0.15) !important; 
+    background-color: #e6f0fc !important; 
     border: 1px solid var(--primary-accent-color) !important; 
     color: #0056b3 !important; 
     cursor: wait !important; 
-    box-shadow: 0 4px 14px rgba(0, 123, 255, 0.25) !important; /* Синє світіння */
+    box-shadow: 0 4px 14px rgba(0, 123, 255, 0.25) !important;
     transform: scale(1) !important; 
 }
 
 /* ================= ПОСИЛЕННЯ СВІТІННЯ ПРИ НАВЕДЕННІ (СВІТЛА ТЕМА) ================= */
 button.btn.btn-success:hover {
     box-shadow: 0 6px 18px rgba(56, 193, 113, 0.4) !important;
+    filter: brightness(0.97) !important;
 }
 button.btn.btn-error:hover {
     box-shadow: 0 6px 18px rgba(191, 26, 26, 0.4) !important;
+    filter: brightness(0.97) !important;
 }
 button.btn.btn-loading:hover {
     box-shadow: 0 6px 18px rgba(0, 123, 255, 0.4) !important;
+    filter: brightness(0.97) !important;
 }
 
 /* ================= СТАНИ КНОПКИ: ТЕМНА ТЕМА ================= */
 
 [data-theme="dark"] button.btn.btn-success, 
 [data-theme="dark"] button.btn.btn-success:disabled { 
-    background-color: rgba(74, 222, 128, 0.12) !important; 
+    background-color: #254131 !important; /* Непрозорий темний фон */
     border-color: #4ade80 !important;
     color: #4ade80 !important; 
-    box-shadow: 0 4px 14px rgba(74, 222, 128, 0.25) !important; /* Світло-зелене світіння */
+    box-shadow: 0 4px 14px rgba(74, 222, 128, 0.25) !important;
 }
 
 [data-theme="dark"] button.btn.btn-error, 
 [data-theme="dark"] button.btn.btn-error:disabled { 
-    background-color: rgba(235, 151, 25, 0.15) !important; 
+    background-color: #453520 !important; /* Непрозорий темний фон */
     border-color: #ffb74d !important;
     color: #ffb74d !important; 
-    box-shadow: 0 4px 14px rgba(235, 151, 25, 0.25) !important; /* Оранжеве світіння */
+    box-shadow: 0 4px 14px rgba(235, 151, 25, 0.25) !important;
 }
 
 [data-theme="dark"] button.btn.btn-loading, 
 [data-theme="dark"] button.btn.btn-loading:disabled { 
-    background-color: rgba(96, 165, 250, 0.15) !important; 
+    background-color: #263951 !important; /* Непрозорий темний фон */
     border-color: #60a5fa !important;
     color: #60a5fa !important; 
-    box-shadow: 0 4px 14px rgba(96, 165, 250, 0.25) !important; /* Світло-синє світіння */
+    box-shadow: 0 4px 14px rgba(96, 165, 250, 0.25) !important;
 }
 
 /* ================= ПОСИЛЕННЯ СВІТІННЯ ПРИ НАВЕДЕННІ (ТЕМНА ТЕМА) ================= */
 [data-theme="dark"] button.btn.btn-success:hover {
     box-shadow: 0 6px 18px rgba(74, 222, 128, 0.4) !important;
+    filter: brightness(1.15) !important;
 }
 [data-theme="dark"] button.btn.btn-error:hover {
     box-shadow: 0 6px 18px rgba(235, 151, 25, 0.4) !important;
+    filter: brightness(1.15) !important;
 }
 [data-theme="dark"] button.btn.btn-loading:hover {
     box-shadow: 0 6px 18px rgba(96, 165, 250, 0.4) !important;
+    filter: brightness(1.15) !important;
 }
 
         /* НАЛАШТУВАННЯ ТА РОЗДІЛЮВАЧІ */
