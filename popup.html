@@ -145,9 +145,18 @@ body::before {
     transition: all 0.25s ease-in-out;
 }
 /* Анімація перетворення в хрестик при відкритті */
-.icon-btn.menu-open .hamburger-icon span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.icon-btn.menu-open .hamburger-icon span:nth-child(2) { opacity: 0; }
-.icon-btn.menu-open .hamburger-icon span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.icon-btn.menu-open .hamburger-icon span:nth-child(1),
+.icon-btn.open .hamburger-icon span:nth-child(1) { 
+    transform: translateY(7px) rotate(45deg); 
+}
+.icon-btn.menu-open .hamburger-icon span:nth-child(2),
+.icon-btn.open .hamburger-icon span:nth-child(2) { 
+    opacity: 0; 
+}
+.icon-btn.menu-open .hamburger-icon span:nth-child(3),
+.icon-btn.open .hamburger-icon span:nth-child(3) { 
+    transform: translateY(-7px) rotate(-45deg); 
+}
 
 /* Стиль для самої SVG іконки */
 .back-svg-icon {
@@ -210,19 +219,19 @@ body::before {
     top: 0; bottom: 0; 
     right: -240px;
     width: 240px;
-    background: rgba(250, 249, 247, 0.82);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    border-left: 1px solid rgba(255, 255, 255, 0.7);
     z-index: 1001; 
     padding: 0;
     display: flex;
     flex-direction: column;
-    
-    /* ЗМІНЕНО: тепер анімується ширина і колір фону */
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
-    
     overflow-y: auto;
+
+    /* === НОВЕ ДОРОГЕ СКЛО МЕНЮ === */
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-left: 1px solid rgba(255, 255, 255, 0.8); /* Білий блік зліва */
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.04); /* Тінь вліво */
 }
 /* === ІЛЮЗІЯ ПЕРЕТВОРЕННЯ МЕНЮ В ЕКРАН НАЛАШТУВАНЬ === */
 .sidebar-menu.expanding-to-full {
@@ -250,10 +259,16 @@ body::before {
 }
 
 [data-theme="dark"] .sidebar-menu { 
-    background: rgba(28, 28, 36, 0.85);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    border-left: 1px solid rgba(255, 255, 255, 0.07);
+    /* Трохи темніше за шапку, щоб виглядало як бічна панель */
+    background: rgba(30, 30, 30, 0.65); 
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    
+    /* Тінь вліво */
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+    
+    /* Блік на лівому краї */
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Виїзд меню */
@@ -514,19 +529,20 @@ textarea::-webkit-scrollbar-track {
     justify-content: space-between; 
     align-items: center;
     margin-bottom: 16px; 
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
     min-height: 60px; 
     height: auto; 
-    
-    margin-top: -16px;            /* ПІДНІМАЄМО ШАПКУ: прибирає "яму" зверху */
-    margin-left: -20px;           /* Розтягуємо ліворуч */
-    margin-right: -20px;          /* Розтягуємо праворуч */
+    margin-top: -16px;            
+    margin-left: -20px;           
+    margin-right: -20px;          
     padding: 16px 20px 16px 20px;
+    position: relative; 
     
-    background: rgba(249, 248, 246, 0.85); 
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    /* === НОВЕ ДОРОГЕ СКЛО === */
+    background: rgba(255, 255, 255, 0.65); /* Чистий білий, більше прозорості */
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); /* М'якша тінь */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.8); /* Білий блік на нижньому краї */
 }
 
 [data-theme="dark"] .header {
@@ -745,31 +761,67 @@ button.btn:active {
 /* === ПРИЛИПАЮЧА ШАПКА В НАЛАШТУВАННЯХ (ВИПРАВЛЕНА) === */
 #settingsView .header {
     position: sticky;
-    top: 0; /* Тепер прилипає миттєво до верхнього краю вікна */
-    
-    /* Компенсуємо відступи body, щоб шапка торкалась країв */
-    margin-top: -16px; 
-    margin-left: -20px;
-    margin-right: -20px;
-    
-    /* Повертаємо відступи всередину шапки, щоб текст і кнопка стояли на своїх місцях */
-    padding-top: 16px;
-    padding-left: 20px;
-    padding-right: 20px;
-    
+    top: 0;
     z-index: 105; 
-    
-    /* Ефект скла */
-    background: rgba(249, 248, 246, 0.85); 
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
 }
 
 
+[data-theme="dark"] .header,
 [data-theme="dark"] #settingsView .header {
-    background: rgba(41, 41, 41, 0.85); /* Точний збіг з фоном #292929 */
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    /* Темне тоноване скло */
+    background: rgba(35, 35, 35, 0.65) !important; 
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    
+    /* Густа тінь для глибини */
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5); 
+    
+    /* Ніжний блік на нижньому краї скла */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+}
+
+/* === МАГІЯ ДЛЯ ГОЛОВНОЇ ШАПКИ === */
+/* 1. Знімаємо блюр з самої шапки, щоб вона більше не блокувала кнопку */
+#mainView .header {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* 2. Малюємо блюр і фон на окремому задньому шарі, який буде ПІД боковим меню */
+#mainView .header::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+    
+    /* === НОВЕ ДОРОГЕ СКЛО ДЛЯ ГОЛОВНОЇ ШАПКИ === */
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Темна тема для нашого заднього шару */
+[data-theme="dark"] #mainView .header::before {
+    background: rgba(35, 35, 35, 0.65);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 3. Залишаємо текст шапки під меню (z-index: 1 менший за 1001) */
+#mainView .title-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* 4. А саму кнопку витягуємо ПОВЕРХ бокового меню (1005 більше за 1001) */
+#mainMenuBtn {
+    position: relative;
+    z-index: 1005 !important;
 }
 
         /* === ПРИЛИПАЮЧИЙ ФУТЕР (GLASSMORPHISM) === */
@@ -777,32 +829,33 @@ button.btn:active {
     position: sticky;
     bottom: 0;
     margin-left: -20px; 
-    margin-right: -20px; /* Повертаємо ідеально на всю ширину */
+    margin-right: -20px;
     padding: 22px 16px 22px 16px;
     margin-top: 10px;      
-    
-    background: rgba(249, 248, 246, 0.85); 
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06); /* Тінь іде вгору */
-    border-top: 1px solid rgba(0, 0, 0, 0.04);    /* Риска зверху */
     z-index: 100;
-
-    
     display: flex;
     align-items: center;
     justify-content: center;
+
+    /* === НОВЕ ДОРОГЕ СКЛО ФУТЕРА === */
+    background: rgba(255, 255, 255, 0.65); 
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.04); /* Тінь вгору */
+    border-top: 1px solid rgba(255, 255, 255, 0.8); /* Білий блік ЗВЕРХУ */
 }
 
 /* Ефект скла для темної теми футера */
 [data-theme="dark"] .sticky-footer {
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);  
-    border-top: 1px solid rgba(255, 255, 255, 0.03); 
+    background: rgba(35, 35, 35, 0.65); 
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
     
-    /* Виправлено: тепер колір збігається з шапками, а не взятий зі стелі */
-    background: rgba(41, 41, 41, 0.85); 
-    backdrop-filter: blur(14px) saturate(180%);
-    -webkit-backdrop-filter: blur(14px) saturate(180%);
+    /* Тінь падає вгору */
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);  
+    
+    /* Блік тепер на верхньому краї */
+    border-top: 1px solid rgba(255, 255, 255, 0.08); 
 }
 
 .sticky-footer .btn {
