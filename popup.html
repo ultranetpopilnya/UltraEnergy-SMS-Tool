@@ -640,6 +640,17 @@ input, textarea {
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
         }
 
+        /* === ВИПРАВЛЕННЯ ДЛЯ ЧЕКБОКСІВ === */
+input[type="checkbox"] {
+    padding: 0; /* Прибираємо зайві відступи, які ламають розмір */
+    transition: none; /* Вимикаємо анімацію, щоб не було "смикання" */
+}
+
+input[type="checkbox"]:focus {
+    box-shadow: none !important; /* Забороняємо малювати велику тінь при кліку */
+    border-color: transparent !important;
+}
+
         /* КНОПКИ */
         /* === УНІВЕРСАЛЬНІ КНОПКИ ДІЙ === */
         button.btn { 
@@ -1299,7 +1310,7 @@ body.side-panel-mode .sticky-footer {
 
         <div style="display: flex; align-items: center; gap: 8px; padding: 10px; background-color: var(--settings-card-bg); border: 1px solid var(--input-border-color); border-radius: 12px;">
             <input type="checkbox" id="autoCloseToggle" style="width: auto; margin: 0; cursor: pointer; accent-color: var(--primary-accent-color);">
-            <label for="autoCloseToggle" style="margin: 0; cursor: pointer; font-size: 13px;  font-weight: 400;">Закривати вікно після відправки</label>
+            <label for="autoCloseToggle" style="margin: 0; cursor: pointer; font-size: 13px; font-weight: 400; user-select: none; -webkit-user-select: none;">Закривати вікно після відправки</label>
         </div>
         
         <!-- КНОПКА ЗБЕРЕГТИ (Змінено клас на універсальний) -->

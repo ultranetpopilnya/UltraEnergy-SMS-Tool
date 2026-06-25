@@ -678,7 +678,7 @@ function loadSettings() {
         
         savedSmsPrices.ultra = data.smsPriceUltra !== undefined ? parseFloat(data.smsPriceUltra) : 1.28;
         savedSmsPrices.energy = data.smsPriceEnergy !== undefined ? parseFloat(data.smsPriceEnergy) : 1.29;
-        autoCloseEnabled = data.autoClose !== undefined ? data.autoClose : true;
+        autoCloseEnabled = data.autoClose !== undefined ? data.autoClose : false;
         
         let toggle = document.getElementById('autoCloseToggle');
         if (toggle) toggle.checked = autoCloseEnabled;
@@ -1432,26 +1432,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showButtonStatus('sendBtn', 'Відправляємо SMS...', 'loading');
 
-    // ДОДАНО: Контролер для таймауту запиту (10 секунд)
+    // Контролер для таймауту запиту (10 секунд)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    fetch('https://api.turbosms.ua/message/send.json', {
+    // Штучна затримка мінімум 600мс для того, щоб анімація статусу встигла програтись
+    const minDelayPromise = new Promise(resolve => setTimeout(resolve, 600));
+
+    // Сам запит до сервера (загортаємо у змінну)
+    const apiPromise = fetch('https://api.turbosms.ua/message/send.json', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
         body: JSON.stringify({ "recipients": [phone], "sms": { "sender": currentSender, "text": text } }),
-        signal: controller.signal // <--- Передаємо сигнал
+        signal: controller.signal
     })
     .then(response => {
-        clearTimeout(timeoutId); // <--- Скасовуємо таймаут, якщо відповідь прийшла
+        clearTimeout(timeoutId); // Скасовуємо таймаут, бо відповідь прийшла
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
             return response.json();
         } else {
             throw new Error("Сервер повернув не JSON (можливо помилка 502)");
         }
-    })
-    .then(data => {
+    });
+
+    // Очікуємо виконання ОБОХ умов: і відповіді API, і завершення 600мс
+    Promise.all([apiPromise, minDelayPromise])
+    .then(([data]) => {
         if (data.response_code === 800 || data.response_code === 801) { 
             showButtonStatus('sendBtn', 'Успішно надіслано!', 'success');
             if (autoCloseEnabled) setTimeout(() => window.close(), 1200);
@@ -1466,7 +1473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (error.name === 'AbortError') {
             showButtonStatus('sendBtn', 'Сервер TurboSMS не відповідає!', 'error');
         } else if (error.message.includes('не JSON')) {
-            showButtonStatus('sendBtn', 'Помилка сервера TurboSMS (502/503)', 'error');
+            showButtonStatus('sendBtn', 'Помилка сервера (502/503)', 'error');
         } else {
             showButtonStatus('sendBtn', 'Помилка з\'єднання з API!', 'error');
         }
