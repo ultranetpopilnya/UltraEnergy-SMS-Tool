@@ -327,12 +327,17 @@ body::before {
 
 /* Заголовок сайдбару */
 .sidebar-header {
-    padding: 6px 18px 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    margin-bottom: 4px;
+    padding: 6px 18px 15px; 
+    margin-bottom: 5px; 
+    
+    /* === ЕФЕКТ ВИРІЗЬБЛЕННЯ (Світла тема) === */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Легка темна тінь всередині */
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9); /* Яскравий білий відблиск на грані */
 }
 [data-theme="dark"] .sidebar-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    /* === ЕФЕКТ ВИРІЗЬБЛЕННЯ (Темна тема) === */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.5); /* Глибока темна лінія (тінь) */
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05); /* Дуже ніжний відблиск світла знизу */
 }
 .sidebar-header-title {
     font-size: 14px;
@@ -543,12 +548,6 @@ textarea::-webkit-scrollbar-track {
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); /* М'якша тінь */
     border-bottom: 1px solid rgba(255, 255, 255, 0.8); /* Білий блік на нижньому краї */
-}
-
-[data-theme="dark"] .header {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-    background: rgba(41, 41, 41, 0.85);
 }
 
 .title-container { 
