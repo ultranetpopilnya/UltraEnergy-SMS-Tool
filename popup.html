@@ -235,7 +235,7 @@ body::before {
 }
 /* === ІЛЮЗІЯ ПЕРЕТВОРЕННЯ МЕНЮ В ЕКРАН НАЛАШТУВАНЬ === */
 .sidebar-menu.expanding-to-full {
-    width: 376px !important; 
+    width: 100%;
     transform: translateX(-240px) !important; /* ФІКС: залишаємо -240px, щоб правий край не відривався від екрану */
     background-color: var(--bg-color) !important; 
     backdrop-filter: none !important;
@@ -773,7 +773,7 @@ button.btn:active {
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     
     /* Густа тінь для глибини */
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5); 
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15); 
     
     /* Ніжний блік на нижньому краї скла */
     border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
@@ -785,6 +785,8 @@ button.btn:active {
     background: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;    /* ПРИБИРАЄМО ЗАЙВУ ТІНЬ */
+    border-bottom: none !important; /* ПРИБИРАЄМО ЗАЙВИЙ БЛІК */
 }
 
 /* 2. Малюємо блюр і фон на окремому задньому шарі, який буде ПІД боковим меню */
@@ -807,7 +809,7 @@ button.btn:active {
     background: rgba(35, 35, 35, 0.65);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -851,7 +853,7 @@ button.btn:active {
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     
     /* Тінь падає вгору */
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);  
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15); 
     
     /* Блік тепер на верхньому краї */
     border-top: 1px solid rgba(255, 255, 255, 0.08); 
@@ -876,9 +878,7 @@ button.btn:active {
 }
         
 /* --- УСПІХ (Зелена) --- */
-button.btn.btn-success, 
-button.btn.btn-success:disabled { 
-    /* Використовуємо суцільний пастельний колір замість rgba, щоб нічого не просвічувалось */
+button.btn.btn-success { 
     background-color: #e8f7ec !important; 
     border: 1px solid var(--success-color) !important; 
     color: #20874b !important; 
@@ -888,8 +888,7 @@ button.btn.btn-success:disabled {
 }
 
 /* --- ПОМИЛКА / ВІДКРИТИ КАРТКУ --- */
-button.btn.btn-error, 
-button.btn.btn-error:disabled { 
+button.btn.btn-error { 
     background-color: #fbe8e8 !important; 
     border: 1px solid var(--danger-color) !important; 
     color: var(--danger-color) !important; 
@@ -898,8 +897,7 @@ button.btn.btn-error:disabled {
 }
 
 /* --- ЗАВАНТАЖЕННЯ (Синя) --- */
-button.btn.btn-loading, 
-button.btn.btn-loading:disabled { 
+button.btn.btn-loading { 
     background-color: #e6f0fc !important; 
     border: 1px solid var(--primary-accent-color) !important; 
     color: #0056b3 !important; 
@@ -924,25 +922,24 @@ button.btn.btn-loading:hover {
 
 /* ================= СТАНИ КНОПКИ: ТЕМНА ТЕМА ================= */
 
-[data-theme="dark"] button.btn.btn-success, 
-[data-theme="dark"] button.btn.btn-success:disabled { 
-    background-color: #254131 !important; /* Непрозорий темний фон */
+/* ================= СТАНИ КНОПКИ: ТЕМНА ТЕМА ================= */
+
+[data-theme="dark"] button.btn.btn-success { 
+    background-color: #254131 !important;
     border-color: #4ade80 !important;
     color: #4ade80 !important; 
     box-shadow: 0 4px 14px rgba(74, 222, 128, 0.25) !important;
 }
 
-[data-theme="dark"] button.btn.btn-error, 
-[data-theme="dark"] button.btn.btn-error:disabled { 
-    background-color: #453520 !important; /* Непрозорий темний фон */
+[data-theme="dark"] button.btn.btn-error { 
+    background-color: #453520 !important;
     border-color: #ffb74d !important;
     color: #ffb74d !important; 
     box-shadow: 0 4px 14px rgba(235, 151, 25, 0.25) !important;
 }
 
-[data-theme="dark"] button.btn.btn-loading, 
-[data-theme="dark"] button.btn.btn-loading:disabled { 
-    background-color: #263951 !important; /* Непрозорий темний фон */
+[data-theme="dark"] button.btn.btn-loading { 
+    background-color: #263951 !important;
     border-color: #60a5fa !important;
     color: #60a5fa !important; 
     box-shadow: 0 4px 14px rgba(96, 165, 250, 0.25) !important;
