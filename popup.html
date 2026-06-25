@@ -217,7 +217,7 @@ body::before {
 .sidebar-menu {
     position: fixed; 
     top: 0; bottom: 0; 
-    right: -240px;
+    right: -280px;
     width: 240px;
     z-index: 1001; 
     padding: 0;
@@ -236,7 +236,7 @@ body::before {
 /* === ІЛЮЗІЯ ПЕРЕТВОРЕННЯ МЕНЮ В ЕКРАН НАЛАШТУВАНЬ === */
 .sidebar-menu.expanding-to-full {
     width: 100%;
-    transform: translateX(-240px) !important; /* ФІКС: залишаємо -240px, щоб правий край не відривався від екрану */
+    transform: translateX(-280px) !important; /* ФІКС: залишаємо -240px, щоб правий край не відривався від екрану */
     background-color: var(--bg-color) !important; 
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
@@ -265,14 +265,14 @@ body::before {
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     
     /* Тінь вліво */
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.5);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
     
     /* Блік на лівому краї */
     border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Виїзд меню */
-.sidebar-menu.open { transform: translateX(-240px); }
+.sidebar-menu.open { transform: translateX(-280px); }
 
 /* === НОРМАЛЬНИЙ СТИЛЬ КНОПОК === */
 .sidebar-menu .menu-item, 
@@ -773,7 +773,7 @@ button.btn:active {
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     
     /* Густа тінь для глибини */
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15); 
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3); 
     
     /* Ніжний блік на нижньому краї скла */
     border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
@@ -809,7 +809,7 @@ button.btn:active {
     background: rgba(35, 35, 35, 0.65);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -853,7 +853,7 @@ button.btn:active {
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     
     /* Тінь падає вгору */
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15); 
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3); 
     
     /* Блік тепер на верхньому краї */
     border-top: 1px solid rgba(255, 255, 255, 0.08); 
