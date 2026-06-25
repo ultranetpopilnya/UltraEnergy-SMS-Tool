@@ -76,7 +76,7 @@ document.addEventListener('click', (e) => {
             // Якщо клік був не по меню, не по його кнопці і не по його інпуту — закриваємо
             if (!menu.contains(e.target) && 
                 (!btn || !btn.contains(e.target)) && 
-                e.target !== input) {
+                (!input || !input.contains(e.target))) {
                 menu._ddClose?.();
             }
         }
@@ -610,8 +610,9 @@ function updatePreview() {
 
     // === РОЗУМНА ЛОГІКА СУМИ ===
     if (rawTemplateText.includes('{amount}')) {
-        // Якщо поле пусте, беремо суму, яку зчитали з сайту (extractedData.credit)
-        if (!amountInput.value && extractedData.credit) {
+        // Підставляємо суму автоматично ТІЛЬКИ якщо ми щойно перемкнули шаблон
+        // Це дозволяє користувачу вільно стирати і редагувати суму вручну
+        if (isTemplateSwitched && extractedData.credit) {
             amountInput.value = extractedData.credit;
         }
     } else {

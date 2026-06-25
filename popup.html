@@ -94,7 +94,7 @@ html {
 
 /* ОСНОВНИЙ BODY */
 body { 
-    width: 376px;
+    width: 370px;
     height: fit-content; /* Дозволяє вікну Chrome ідеально стискатись при виході з Налаштувань */
     max-height: 600px; 
     overflow-y: auto; 
@@ -644,6 +644,7 @@ input, textarea {
 input[type="checkbox"] {
     padding: 0; /* Прибираємо зайві відступи, які ламають розмір */
     transition: none; /* Вимикаємо анімацію, щоб не було "смикання" */
+    margin: 0;
 }
 
 input[type="checkbox"]:focus {
@@ -905,13 +906,18 @@ button.btn.btn-loading:hover {
 
         /* Ліва колонка (Телефон) займає 60% */
         .input-row .input-col:first-child {
-            flex: 5;
+            flex: 5.5;
         }
 
         /* Права колонка (Сума) займає 40% */
         .input-row .input-col:last-child {
-            flex: 5;
+            flex: 4.5;
         }
+
+        /* Вирівнюємо колонки ідеально 50/50 тільки всередині Налаштувань */
+#settingsView .input-row .input-col {
+    flex: 1 !important;
+}
 
         /* === ТАКТИЛЬНІ ВІДЧУТТЯ ДЛЯ КНОПОК === */
         button.btn:active, .icon-btn:active { 
@@ -1222,9 +1228,7 @@ body.side-panel-mode .sticky-footer {
     </div>
 
 </div>
-        <div class="label-row">
-    <label for="message">Текст SMS:</label>
-</div>
+        <label for="message">Текст SMS:</label>
 
 <div class="textarea-container">
     <textarea id="message" placeholder="Введіть повідомлення..."></textarea>
