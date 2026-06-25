@@ -523,11 +523,16 @@ textarea::-webkit-scrollbar-track {
     margin-left: -20px;           /* Розтягуємо ліворуч */
     margin-right: -20px;          /* Розтягуємо праворуч */
     padding: 16px 20px 16px 20px;
+    
+    background: rgba(249, 248, 246, 0.85); 
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
 }
 
 [data-theme="dark"] .header {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    background: rgba(41, 41, 41, 0.85);
 }
 
 .title-container { 
@@ -756,15 +761,15 @@ button.btn:active {
     
     /* Ефект скла */
     background: rgba(249, 248, 246, 0.85); 
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
 }
 
 
 [data-theme="dark"] #settingsView .header {
-    background: rgba(41, 41, 41, 0.9); /* Точний збіг з фоном #292929 */
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(41, 41, 41, 0.85); /* Точний збіг з фоном #292929 */
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
 }
 
         /* === ПРИЛИПАЮЧИЙ ФУТЕР (GLASSMORPHISM) === */
@@ -777,8 +782,8 @@ button.btn:active {
     margin-top: 10px;      
     
     background: rgba(249, 248, 246, 0.85); 
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06); /* Тінь іде вгору */
     border-top: 1px solid rgba(0, 0, 0, 0.04);    /* Риска зверху */
     z-index: 100;
@@ -791,11 +796,13 @@ button.btn:active {
 
 /* Ефект скла для темної теми футера */
 [data-theme="dark"] .sticky-footer {
-        backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-     background: rgba(30, 30, 30, 0.6);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);  /* Тінь іде вгору */
-    border-top: 1px solid rgba(255, 255, 255, 0.03); /* Риска зверху */
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);  
+    border-top: 1px solid rgba(255, 255, 255, 0.03); 
+    
+    /* Виправлено: тепер колір збігається з шапками, а не взятий зі стелі */
+    background: rgba(41, 41, 41, 0.85); 
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
 }
 
 .sticky-footer .btn {
