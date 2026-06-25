@@ -512,19 +512,20 @@ textarea::-webkit-scrollbar-track {
 .header { 
     display: flex; 
     justify-content: space-between; 
-    
-    /* ВАЖЛИВО: Прив'язуємо все до верху. Тепер заголовок ніколи не поповзе вгору */
     align-items: center;
-    
     margin-bottom: 16px; 
-    border-bottom: 1px solid var(--input-border-color); 
-    
-    /* Шапка має мінімальну висоту, але МОЖЕ рости вниз, якщо тексту багато */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); 
     min-height: 60px; 
     height: auto; 
     
-    /* Відступ зверху фіксує позицію H3. Відступ знизу "дихає" */
-    padding: 0px 0 16px 0; 
+    /* === РОЗТЯГУЄМО НА ВСЮ ШИРИНУ === */
+    margin-left: -20px;
+    margin-right: -20px;
+    padding: 0px 20px 16px 20px; 
+}
+
+[data-theme="dark"] .header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .title-container { 
@@ -734,6 +735,35 @@ button.btn:active {
             transform: none;
         }
         
+/* === ПРИЛИПАЮЧА ШАПКА В НАЛАШТУВАННЯХ (ВИПРАВЛЕНА) === */
+#settingsView .header {
+    position: sticky;
+    top: 0; /* Тепер прилипає миттєво до верхнього краю вікна */
+    
+    /* Компенсуємо відступи body, щоб шапка торкалась країв */
+    margin-top: -16px; 
+    margin-left: -20px;
+    margin-right: -20px;
+    
+    /* Повертаємо відступи всередину шапки, щоб текст і кнопка стояли на своїх місцях */
+    padding-top: 16px;
+    padding-left: 20px;
+    padding-right: 20px;
+    
+    z-index: 105; 
+    
+    /* Ефект скла */
+    background: rgba(249, 248, 246, 0.85); 
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+
+[data-theme="dark"] #settingsView .header {
+    background: rgba(41, 41, 41, 0.9); /* Точний збіг з фоном #292929 */
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
 
         /* === ПРИЛИПАЮЧИЙ ФУТЕР (GLASSMORPHISM) === */
 .sticky-footer {
