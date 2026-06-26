@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
     <style>
+/* ========================================= */
+/* 1. ШРИФТИ ТА ЗМІННІ (ФУНДАМЕНТ)           */
+/* ========================================= */
 @font-face {
     font-family: 'TextFont';
     src: url('fonts/FixelText-Medium.otf') format('opentype');
@@ -24,23 +27,7 @@
     font-weight: 200;
 }
 
-*, *::before, *::after {
-    box-sizing: border-box;
-}
-
-body {
-    /* ПОРЯДОК ВАЖЛИВИЙ: спочатку текст, потім емодзі */
-    font-family: 'TextFont';
-}
-
-button img, 
-.translit-inside-btn img,
-.inside-input-btn img {
-    pointer-events: none;
-    user-select: none; /* Додатково забороняємо виділення іконки як тексту */
-}
-
-    :root {
+:root {
     --gradient: #fff5df;        
     --ultra-color: #811e71;
     --energy-color: #008d00;       
@@ -65,7 +52,7 @@ button img,
     --settings-card-bg: #fff;
 }
 
-        [data-theme="dark"] {
+[data-theme="dark"] {
     --gradient: #29251c; 
     --ultra-color: #b464a7;
     --energy-color: #81ca42;
@@ -88,6 +75,13 @@ button img,
     --settings-card-bg: #2d2d2d;
 }
 
+/* ========================================= */
+/* 2. БАЗОВІ СТИЛІ ТА СКРОЛБАРИ              */
+/* ========================================= */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 html { 
     height: auto; 
 }
@@ -99,8 +93,8 @@ body {
     max-height: 600px; 
     overflow-y: auto; 
     overflow-x: hidden; 
-    padding: 16px 20px 0px 20px; 
-    
+    padding: 16px 20px 0px 20px;
+    font-family: 'TextFont';
     /* Повертаємо базовий колір сюди, щоб працювали теми */
     background-color: var(--bg-color); 
     
@@ -126,438 +120,32 @@ body::before {
     background-image: linear-gradient(135deg, rgba(153, 74, 140, 0.12) 0%, rgba(41, 41, 41, 0) 40%, rgba(41, 41, 41, 0) 60%, rgba(129, 202, 66, 0.12) 100%);
 }
 
-/* === ІКОНКА ГАМБУРГЕР === */
-.hamburger-icon {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    width: 22px;
-    height: 16px;
-    cursor: pointer;
-    margin: 0px;
-}
-.hamburger-icon span {
-    display: block;
-    height: 2px;
-    width: 100%;
-    background-color: var(--header-color);
-    border-radius: 2px;
-    transition: all 0.25s ease-in-out;
-}
-/* Анімація перетворення в хрестик при відкритті */
-.icon-btn.menu-open .hamburger-icon span:nth-child(1),
-.icon-btn.open .hamburger-icon span:nth-child(1) { 
-    transform: translateY(7px) rotate(45deg); 
-}
-.icon-btn.menu-open .hamburger-icon span:nth-child(2),
-.icon-btn.open .hamburger-icon span:nth-child(2) { 
-    opacity: 0; 
-}
-.icon-btn.menu-open .hamburger-icon span:nth-child(3),
-.icon-btn.open .hamburger-icon span:nth-child(3) { 
-    transform: translateY(-7px) rotate(-45deg); 
-}
-
-/* Стиль для самої SVG іконки */
-.back-svg-icon {
-    display: block;
-    transition: transform 0.2s ease, color 0.2s ease;
-    /* Колір береться зі змінної теми */
-    color: var(--header-color); 
-}
-
-/* === БЕЙДЖ ОНОВЛЕННЯ (Крапка) === */
-.menu-badge {
-    position: absolute;
-    top: -7px;
-    right: -6px;
-    width: 10px;
-    height: 10px;
-    background-color: var(--danger-color); /* Змінено з зеленого на колір уваги (червоний) */
-    border-radius: 50%;
-    border: 2px solid var(--bg-color);
-    animation: pulseNeon 1.5s infinite alternate ease-in-out;
-}
-
-/* Анімація пульсування для світлої теми (під колір --danger-color: rgb(191,26,26)) */
-@keyframes pulseNeon {
-    0% {
-        box-shadow: 0 0 0 0 rgba(191, 26, 26, 0.7);
-        transform: scale(0.95);
-    }
-    100% {
-        box-shadow: 0 0 6px 4px rgba(191, 26, 26, 0);
-        transform: scale(1.05);
-    }
-}
-
-/* Адаптація бейджа та тіні для темної теми (під її danger-color: rgb(235,151,25)) */
-[data-theme="dark"] .menu-badge {
-    animation: pulseNeonDark 1.5s infinite alternate ease-in-out;
-}
-
-@keyframes pulseNeonDark {
-    0% {
-        box-shadow: 0 0 0 0 rgba(235, 151, 25, 0.7);
-        transform: scale(0.95);
-    }
-    100% {
-        box-shadow: 0 0 6px 4px rgba(235, 151, 25, 0);
-        transform: scale(1.05);
-    }
-}
-
-#mainMenuBtn {
-    position: relative;
-    z-index: 1005; 
-    transition: opacity 0.2s ease-out; /* ДОДАНО: щоб хрестик плавно зникав */
-}
-
-/* === БОКОВЕ МЕНЮ === */
-.sidebar-menu {
-    position: fixed; 
-    top: 0; bottom: 0; 
-    right: -280px;
-    width: 240px;
-    z-index: 1001; 
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
-    overflow-y: auto;
-
-    /* === НОВЕ ДОРОГЕ СКЛО МЕНЮ === */
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border-left: 1px solid rgba(255, 255, 255, 0.8); /* Білий блік зліва */
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.04); /* Тінь вліво */
-}
-/* === ІЛЮЗІЯ ПЕРЕТВОРЕННЯ МЕНЮ В ЕКРАН НАЛАШТУВАНЬ === */
-.sidebar-menu.expanding-to-full {
-    width: 100%;
-    transform: translateX(-280px) !important; /* ФІКС: залишаємо -240px, щоб правий край не відривався від екрану */
-    background-color: var(--bg-color) !important; 
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border-left: none !important;
-}
-
-.sidebar-menu.expanding-to-full > * {
-    opacity: 0 !important;
+body.theme-loaded {
+    opacity: 1;
     transition: opacity 0.15s ease-out;
-    pointer-events: none;
-}
+} 
 
-/* Анімація: Налаштування від'їжджають вправо (якщо ви її ще не додали) */
-@keyframes slideOutRight {
-    0% { transform: translateX(0); opacity: 1; }
-    100% { transform: translateX(100%); opacity: 0; }
-}
-.anim-slide-out-right {
-    animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+::-webkit-scrollbar { width: 3px; height: 6px; }
+::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-hover); }
 
-[data-theme="dark"] .sidebar-menu { 
-    /* Трохи темніше за шапку, щоб виглядало як бічна панель */
-    background: rgba(30, 30, 30, 0.65); 
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    
-    /* Тінь вліво */
-    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
-    
-    /* Блік на лівому краї */
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Виїзд меню */
-.sidebar-menu.open { transform: translateX(-280px); }
-
-/* === НОРМАЛЬНИЙ СТИЛЬ КНОПОК === */
-.sidebar-menu .menu-item, 
-.sidebar-menu .menu-item-text {
-    padding: 11px 16px;
-    border-radius: 14px;
-    margin: 2px 10px;
-    width: calc(100% - 20px);
-    display: flex;
-    align-items: center;
-    background: transparent;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.18s ease, transform 0.15s ease, color 0.18s ease;
-    font-size: 13px;
-    font-family: inherit;
-    letter-spacing: 0.01em;
-}
-
-.sidebar-menu .menu-item-text {
-    color: var(--subtitle-color);
-    cursor: default;
-    font-size: 12px;
-    justify-content: center;
-    opacity: 0.75;
-    letter-spacing: 0.02em;
-}
-
-/* Наведення — ніжний glassmorphism */
-.sidebar-menu .menu-item:hover {
-    background: rgba(0, 0, 0, 0.065);
-    color: var(--text-color);
-    transform: translateX(-3px);
-}
-[data-theme="dark"] .sidebar-menu .menu-item:hover {
-    background: rgba(255, 255, 255, 0.09);
-    color: var(--text-color);
-    transform: translateX(-3px);
-}
-
-/* Легке натискання */
-.sidebar-menu .menu-item:active {
-    transform: scale(0.96);
-}
-
-/* Розміри іконок */
-.sidebar-menu .menu-icon { 
-    width: 18px; height: 18px; margin-right: 10px; object-fit: contain; flex-shrink: 0; 
-}
-
-/* Заголовок сайдбару */
-.sidebar-header {
-    padding: 6px 18px 15px; 
-    margin-bottom: 5px; 
-    
-    /* === ЕФЕКТ ВИРІЗЬБЛЕННЯ (Світла тема) === */
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Легка темна тінь всередині */
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9); /* Яскравий білий відблиск на грані */
-}
-[data-theme="dark"] .sidebar-header {
-    /* === ЕФЕКТ ВИРІЗЬБЛЕННЯ (Темна тема) === */
-    border-bottom: 1px solid rgba(0, 0, 0, 0.5); /* Глибока темна лінія (тінь) */
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05); /* Дуже ніжний відблиск світла знизу */
-}
-.sidebar-header-title {
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--subtitle-color);
-    opacity: 0.8;
-}
-
-/* Розділювач — розпірка по висоті */
-.menu-divider {
-    flex: 1;
-    border: none;
-    min-height: 12px;
-}
-
-/* === КНОПКА ОНОВЛЕННЯ (Абсолютний пріоритет) === */
-.sidebar-menu button.menu-item.update-item {
-    margin: 6px 10px 6px;
-    width: calc(100% - 20px);
-    background: linear-gradient(135deg, #007bff 0%, #0050cc 100%);
-    color: #ffffff;
-    border-radius: 14px;
-    justify-content: center;
-    font-size: 12.5px;
-    letter-spacing: 0.02em;
-    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.38);
-    animation: updatePulse 2.2s infinite alternate ease-in-out;
-    transform: translateX(0);
-}
-
-.sidebar-menu button.menu-item.update-item:hover {
-    background: linear-gradient(135deg, #1a8cff 0%, #0060ee 100%);
-    color: #ffffff;
-    transform: scale(1.02);
-    box-shadow: 0 6px 22px rgba(0, 123, 255, 0.55);
-}
-
-/* Для темної теми */
-[data-theme="dark"] .sidebar-menu button.menu-item.update-item {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
-    animation: updatePulseDark 2.2s infinite alternate ease-in-out;
-}
-
-[data-theme="dark"] .sidebar-menu button.menu-item.update-item:hover {
-    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
-    box-shadow: 0 6px 22px rgba(59, 130, 246, 0.55);
-}
-
-@keyframes updatePulse {
-    from { box-shadow: 0 4px 14px rgba(0, 123, 255, 0.32); }
-    to   { box-shadow: 0 4px 24px rgba(0, 123, 255, 0.58); }
-}
-
-@keyframes updatePulseDark {
-    from { box-shadow: 0 4px 14px rgba(59, 130, 246, 0.28); }
-    to   { box-shadow: 0 4px 24px rgba(59, 130, 246, 0.52); }
-}
-
-.header-center { justify-content: center; }
-.input-center { text-align: center; margin-bottom: 10px; }
-
-/* Контейнер для позиціювання */
-.textarea-container {
-    position: relative;
-    width: 100%;
-    margin-top: 3px;
-}
-
-/* Оновлене поле: додаємо padding-right, щоб текст не залізав під кнопку */
-.textarea-container textarea {
-    width: 100%;
-    height: 126px;
-    resize: none;
-    padding: 8px 36px 8px 14px; /* 45px справа — це «безпечна зона» для кнопки */
-    line-height: 1.4;
-    display: block;
-}
-
-textarea::-webkit-scrollbar-track {
-    margin-top: 10px;    
-    margin-bottom: 10px; 
+/* Робимо відступи для скролбара ТІЛЬКИ на головному вікні (body) */
+body::-webkit-scrollbar-track {
+    margin-top: 81px;    /* Скролбар починається рівно ПІД шапкою */
+    margin-bottom: 87px; /* Скролбар закінчується рівно НАД футером */
     background: transparent;
 }
 
-/* Кнопка без фону та бордера */
-.translit-inside-btn {
-    position: absolute;
-    top: 5px;
-    right: 7px;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    
-    /* Прибираємо фон та рамку */
-    background: transparent;
-    border: none;
-    
-    cursor: pointer;
-    z-index: 10;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    outline: none;
-}
-
-/* Ефект при наведенні */
-.translit-inside-btn:hover {
-    transform: scale(1.1); /* Трохи збільшуємо саму іконку */
-    background: transparent; /* Залишаємо прозорою */
-}
-
-.translit-inside-btn:hover .img-icon-translit {
-    /* Легкий поворот іконки при наведенні для "магічного" ефекту */
-    transform: rotate(5deg);
-}
-
-/* Ефект при натисканні */
-.translit-inside-btn:active {
-    transform: scale(0.9);
-    opacity: 0.8;
-}
-
-/* Розмір іконки */
-.img-icon-translit {
-    width: 20px; /* Можна трохи збільшити, бо тепер немає рамки навколо */
-    height: 20px;
-    display: block;
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)); /* Додаємо легку тінь самій іконці */
-}
-
-/* Вимикаємо ефект скла для темної теми, бо фону немає */
-[data-theme="dark"] .translit-inside-btn {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: none;
-}
-
-        .sms-counter-bar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 13px; 
-            color: var(--subtitle-color);
-            margin: 9px 0  12px 0;
-            padding: 0 0px;
-            font-weight: 400;
-            white-space: nowrap; /* ВАЖЛИВО: Забороняє тексту переноситись на новий рядок */
-            overflow: hidden;    /* Ховає зайве, щоб не ламало вікно, якщо цифр буде мільйон */
-        }
-
-        .sms-counter-bar > div {
-    white-space: nowrap;
-    line-height: 1.4;
-}
-
-.sms-counter-bar strong {
-    color: var(--text-color);
-    font-size: 13px;
-    margin: 0 2px;
-    font-weight: 400;  /* ← ОСЬ ВИПРАВЛЕННЯ */
-    vertical-align: baseline;
-}
-        
-        .sms-warning {
-            color: var(--warning-text) !important;
-        }
-
-        /* ДОДАНО: Клас, який плавно показує вікно після завантаження теми */
-        body.theme-loaded {
-            opacity: 1;
-            transition: opacity 0.15s ease-out;
-        } 
-
-        ::-webkit-scrollbar { width: 3px; height: 6px; }
-        ::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-hover); }
-
-    ::-webkit-scrollbar-track {
-    margin-top: 0px;    /* Скролбар починається нижче заокруглення */
-    margin-bottom: 0px; /* Скролбар закінчується вище заокруглення */
+/* Для всіх інших елементів (текстові поля, менюшки) залишаємо звичайний трек */
+::-webkit-scrollbar-track {
     background: transparent;
 }
-        
+
+/* ========================================= */
+/* 3. ТИПОГРАФІКА ТА УТИЛІТИ                 */
+/* ========================================= */
 .ultra-color { color: var(--ultra-color) !important; }
 .energy-color { color: var(--energy-color) !important; }
-
-.header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center;
-    margin-bottom: 16px; 
-    min-height: 60px; 
-    height: auto; 
-    margin-top: -16px;            
-    margin-left: -20px;           
-    margin-right: -20px;          
-    padding: 16px 20px 16px 20px;
-    position: relative; 
-    
-    /* === НОВЕ ДОРОГЕ СКЛО === */
-    background: rgba(255, 255, 255, 0.65); /* Чистий білий, більше прозорості */
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); /* М'якша тінь */
-    border-bottom: 1px solid rgba(255, 255, 255, 0.8); /* Білий блік на нижньому краї */
-}
-
-.title-container { 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: center; 
-    padding-bottom: 0; /* Жорсткий відступ від верху шапки. h3 завжди буде тут */
-    height: auto; 
-    width: 100%; /* Щоб довгий текст не наїжджав на меню */
-}
 
 h3 { 
     margin: 0; 
@@ -583,187 +171,40 @@ h3 {
     display: none; 
     color: var(--warning-text);
 }
-        
-/* Блок з іконкою меню */
-.header-icons { 
+
+/* ========================================= */
+/* 4. МАКЕТ, КАРКАС ТА ЕКРАНИ                */
+/* ========================================= */
+#settingsView { display: none; 
+}
+
+.header { 
     display: flex; 
-    align-items: center; /* Центруємо іконки між собою, якщо їх буде кілька */
-    gap: 15px; 
-    margin-top: 0; /* Прибрали милицю, яка опускала іконки вниз */
-}
-
-.icon-btn { 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    background: none; 
-    border: none; 
-    font-size: 18px; 
-    cursor: pointer; 
-    padding: 0; 
-    color: #555; 
-    transition: 0.2s; 
-}
-
-        .icon-btn-danger:hover { color: var(--danger-color); }
-        
-    .img-icon {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    /* Відступ справа, щоб текст не прилипав до картинки */
-    vertical-align: middle;
-}
-
-/* Зменшені іконки для бейджа "Оновлення" */
-.img-icon-sm {
-    width: 18px;
-    height: 18px;
-    object-fit: contain;
-    vertical-align: middle;
-}
-
-/* Розмір кульок біля назв провайдерів (Ultra / Energy) */
-.network-title .img-icon {
-    width: 16px;  /* Задай потрібний розмір, наприклад 14px, 16px чи 18px */
-    height: 16px;
-    margin-right: 4px; /* Відступ між кулькою і текстом */
-}
-
-/* === ІНПУТИ ТА ПОЛЯ === */
-label { 
-    font-weight: 400; 
-    font-size: 13px; 
-    margin-top: 16px; /* Відстань від попереднього поля */
-    margin-bottom: 3px; /* Чіткий відступ до свого поля */
-    display: block; 
-    color: var(--text-color);
-    margin-left: 9px; /* Вирівняно під закруглення інпута */
-}
-
-input, textarea { 
-    width: 100%; 
-    padding: 9px 14px; 
-    background-color: var(--input-bg-color); 
-    border: 1px solid var(--input-border-color); 
-    border-radius: 14px; 
-    font-family: inherit;
-    font-size: 13px; 
-    color: var(--text-color); 
-    transition: all 0.2s ease-in-out; 
-}
-
-.input-row label {
-    margin-top: 0; /* Рядок сам робить відступ зверху */
-    margin-bottom: 3px; /* Зберігаємо відстань до поля */
-}
-        input:focus, textarea:focus { 
-            border-color: var(--input-focus-border-color); 
-            outline: none;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-        }
-
-        /* === ВИПРАВЛЕННЯ ДЛЯ ЧЕКБОКСІВ === */
-input[type="checkbox"] {
-    padding: 0; /* Прибираємо зайві відступи, які ламають розмір */
-    transition: none; /* Вимикаємо анімацію, щоб не було "смикання" */
-    margin: 0;
-}
-
-input[type="checkbox"]:focus {
-    box-shadow: none !important; /* Забороняємо малювати велику тінь при кліку */
-    border-color: transparent !important;
-}
-
-        /* КНОПКИ */
-        /* === УНІВЕРСАЛЬНІ КНОПКИ ДІЙ === */
-        button.btn { 
-            width: 100%; 
-            height: 40px; 
-            padding: 16px 16px 16px 16px; 
-            margin: 16px; 
-            background-color: var(--primary-accent-color); 
-            font-family: inherit; 
-            color: white; 
-            border: none; 
-            border-radius: 14px; 
-            cursor: pointer;  
-            font-weight: 600; /* Зробив трохи жирнішим для кращого вигляду (Bold) */
-            font-size: 14px; 
-            letter-spacing: 0.02em;
-            transition: background-color 0.4s ease, 
-                border-color 0.4s ease, 
-                color 0.4s ease, 
-                box-shadow 0.4s ease, 
-                transform 0.15s ease, 
-                filter 0.4s ease !important;
-            position: relative; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 6px; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis;
-        }
-
-        /* ОКРЕМИЙ СТИЛЬ НАТИСНЕННЯ (ІГНОРУЄ ІНШІ СТАНИ) */
-button.btn:active {
-    /* 1. Зменшуємо кнопку, створюючи ефект натискання */
-    transform: scale(0.98) !important;
-    
-    /* 2. Робимо колір трохи темнішим (працює і для синіх, і для зелених кнопок) */
-    filter: brightness(0.85) contrast(1.1) !important;
-    
-    /* 3. Прибираємо або сильно зменшуємо тінь, бо кнопка тепер "торкається" поверхні */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-    
-    /* 4. Миттєва реакція на клік (дуже швидка анімація) */
-    transition: all 0.1s ease-out !important;
-}
-
-        /* Контейнер для тексту */
-.btn-content {
-    display: flex;
+    justify-content: space-between; 
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 1;
-    filter: blur(0px);
-    transform: scale(1);
+    margin-bottom: 16px; 
+    min-height: 60px; 
+    height: auto; 
+    margin-top: -16px;            
+    margin-left: -20px;           
+    margin-right: -20px;          
+    padding: 16px 20px 16px 20px;
+    position: relative; 
+    
+    /* === НОВЕ ДОРОГЕ СКЛО === */
+    background: rgba(255, 255, 255, 0.65); /* Чистий білий, більше прозорості */
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04); /* М'якша тінь */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.8); /* Білий блік на нижньому краї */
 }
 
-/* Стан, коли текст зникає або готується з'явитися */
-.content-hidden {
-    opacity: 0;
-    filter: blur(4px);
-    transform: scale(0.92);
-}
-
-        /* Ефект при наведенні на будь-яку кнопку */
-        button.btn:hover {
-            filter: brightness(1.1);
-        }
-
-        /* Вимкнена кнопка */
-        button:disabled, button.btn:disabled:hover { 
-            background-color: var(--btn-disabled-bg) !important; 
-            color: var(--subtitle-color); 
-            cursor: not-allowed; 
-            box-shadow: none !important;
-            filter: none;
-            transform: none;
-        }
-        
 /* === ПРИЛИПАЮЧА ШАПКА В НАЛАШТУВАННЯХ (ВИПРАВЛЕНА) === */
 #settingsView .header {
     position: sticky;
     top: 0;
     z-index: 105; 
 }
-
 
 [data-theme="dark"] .header,
 [data-theme="dark"] #settingsView .header {
@@ -813,19 +254,31 @@ button.btn:active {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* 3. Залишаємо текст шапки під меню (z-index: 1 менший за 1001) */
+.header-center { justify-content: center; }
+
+.title-container { 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    padding-bottom: 0; /* Жорсткий відступ від верху шапки. h3 завжди буде тут */
+    height: auto; 
+    width: 100%; /* Щоб довгий текст не наїжджав на меню */
+}
+
 #mainView .title-container {
     position: relative;
     z-index: 1;
 }
 
-/* 4. А саму кнопку витягуємо ПОВЕРХ бокового меню (1005 більше за 1001) */
-#mainMenuBtn {
-    position: relative;
-    z-index: 1005 !important;
+/* Блок з іконкою меню */
+.header-icons { 
+    display: flex; 
+    align-items: center; /* Центруємо іконки між собою, якщо їх буде кілька */
+    gap: 15px; 
+    margin-top: 0; /* Прибрали милицю, яка опускала іконки вниз */
 }
 
-        /* === ПРИЛИПАЮЧИЙ ФУТЕР (GLASSMORPHISM) === */
+/* === ПРИЛИПАЮЧИЙ ФУТЕР (GLASSMORPHISM) === */
 .sticky-footer {
     position: sticky;
     bottom: 0;
@@ -859,119 +312,12 @@ button.btn:active {
     border-top: 1px solid rgba(255, 255, 255, 0.08); 
 }
 
-.sticky-footer .btn {
-    width: 270px;
-    margin: 0;
-    pointer-events: auto;
-    box-shadow: 0 4px 14px rgba(0, 123, 255, 0.25); 
+.setting-divider { 
+    border: none; 
+    border-top: 1px solid var(--input-border-color); 
+    margin: 16px 0; 
 }
 
-.sticky-footer .btn:hover {
-    box-shadow: 0 6px 18px rgba(0, 123, 255, 0.4); 
-}
-
-[data-theme="dark"] .sticky-footer .btn {
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
-}
-[data-theme="dark"] .sticky-footer .btn:hover {
-    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.4);
-}
-        
-/* --- УСПІХ (Зелена) --- */
-button.btn.btn-success { 
-    background-color: #e8f7ec !important; 
-    border: 1px solid var(--success-color) !important; 
-    color: #20874b !important; 
-    cursor: default !important; 
-    box-shadow: 0 4px 14px rgba(56, 193, 113, 0.25) !important;
-    transform: scale(1) !important; 
-}
-
-/* --- ПОМИЛКА / ВІДКРИТИ КАРТКУ --- */
-button.btn.btn-error { 
-    background-color: #fbe8e8 !important; 
-    border: 1px solid var(--danger-color) !important; 
-    color: var(--danger-color) !important; 
-    cursor: pointer !important; 
-    box-shadow: 0 4px 14px rgba(191, 26, 26, 0.25) !important;
-}
-
-/* --- ЗАВАНТАЖЕННЯ (Синя) --- */
-button.btn.btn-loading { 
-    background-color: #e6f0fc !important; 
-    border: 1px solid var(--primary-accent-color) !important; 
-    color: #0056b3 !important; 
-    cursor: wait !important; 
-    box-shadow: 0 4px 14px rgba(0, 123, 255, 0.25) !important;
-    transform: scale(1) !important; 
-}
-
-/* ================= ПОСИЛЕННЯ СВІТІННЯ ПРИ НАВЕДЕННІ (СВІТЛА ТЕМА) ================= */
-button.btn.btn-success:hover {
-    box-shadow: 0 6px 18px rgba(56, 193, 113, 0.4) !important;
-    filter: brightness(0.97) !important;
-}
-button.btn.btn-error:hover {
-    box-shadow: 0 6px 18px rgba(191, 26, 26, 0.4) !important;
-    filter: brightness(0.97) !important;
-}
-button.btn.btn-loading:hover {
-    box-shadow: 0 6px 18px rgba(0, 123, 255, 0.4) !important;
-    filter: brightness(0.97) !important;
-}
-
-/* ================= СТАНИ КНОПКИ: ТЕМНА ТЕМА ================= */
-
-/* ================= СТАНИ КНОПКИ: ТЕМНА ТЕМА ================= */
-
-[data-theme="dark"] button.btn.btn-success { 
-    background-color: #254131 !important;
-    border-color: #4ade80 !important;
-    color: #4ade80 !important; 
-    box-shadow: 0 4px 14px rgba(74, 222, 128, 0.25) !important;
-}
-
-[data-theme="dark"] button.btn.btn-error { 
-    background-color: #453520 !important;
-    border-color: #ffb74d !important;
-    color: #ffb74d !important; 
-    box-shadow: 0 4px 14px rgba(235, 151, 25, 0.25) !important;
-}
-
-[data-theme="dark"] button.btn.btn-loading { 
-    background-color: #263951 !important;
-    border-color: #60a5fa !important;
-    color: #60a5fa !important; 
-    box-shadow: 0 4px 14px rgba(96, 165, 250, 0.25) !important;
-}
-
-/* ================= ПОСИЛЕННЯ СВІТІННЯ ПРИ НАВЕДЕННІ (ТЕМНА ТЕМА) ================= */
-[data-theme="dark"] button.btn.btn-success:hover {
-    box-shadow: 0 6px 18px rgba(74, 222, 128, 0.4) !important;
-    filter: brightness(1.15) !important;
-}
-[data-theme="dark"] button.btn.btn-error:hover {
-    box-shadow: 0 6px 18px rgba(235, 151, 25, 0.4) !important;
-    filter: brightness(1.15) !important;
-}
-[data-theme="dark"] button.btn.btn-loading:hover {
-    box-shadow: 0 6px 18px rgba(96, 165, 250, 0.4) !important;
-    filter: brightness(1.15) !important;
-}
-
-        /* НАЛАШТУВАННЯ ТА РОЗДІЛЮВАЧІ */
-        #settingsView { display: none; }
-        .network-title { 
-    margin: 16px 0 6px 0; /* Зробили відступ вниз 6px, як у label */
-    font-size: 13px; 
-    padding-bottom: 2px; 
-    font-weight: 400; 
-    display: flex; 
-    align-items: center; 
-    gap: 4px; /* Збільшили відстань між кулькою і текстом */
-    margin-left: 8px; /* Синхронізовано з label */
-}
-        
 .setting-subtitle { 
     font-size: 13px; 
     font-weight: 400; 
@@ -981,64 +327,48 @@ button.btn.btn-loading:hover {
     margin-left: 8px; /* Синхронізовано з label */
 }
 
-        .input-row {
-            display: flex;
-            gap: 12px; /* Відстань між полями */
-            width: 100%;
-            margin-top: 16px; /* Загальний відступ зверху */
-        }
-
-        .input-col {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end; /* Вирівнює інпути по нижньому краю */
-        }
-
-        /* Ліва колонка (Телефон) займає 60% */
-        .input-row .input-col:first-child {
-            flex: 5.5;
-        }
-
-        /* Права колонка (Сума) займає 40% */
-        .input-row .input-col:last-child {
-            flex: 4.5;
-        }
-
-        /* Вирівнюємо колонки ідеально 50/50 тільки всередині Налаштувань */
-#settingsView .input-row .input-col {
-    flex: 1 !important;
+/* ========================================= */
+/* 5. ФОРМИ, ІНПУТИ ТА ПОЛЯ                  */
+/* ========================================= */
+label { 
+    font-weight: 400; 
+    font-size: 13px; 
+    margin-top: 16px; /* Відстань від попереднього поля */
+    margin-bottom: 3px; /* Чіткий відступ до свого поля */
+    display: block; 
+    color: var(--text-color);
+    margin-left: 9px; /* Вирівняно під закруглення інпута */
 }
 
-        /* === ТАКТИЛЬНІ ВІДЧУТТЯ ДЛЯ КНОПОК === */
-        button.btn:active, .icon-btn:active { 
-            transform: scale(0.92); 
-            transition: transform 0.2s ease-out;
-        }
-
-        /* === ГОРИЗОНТАЛЬНА АНІМАЦІЯ ПЕРЕХОДІВ === */
-        @keyframes slideInRight {
-            0% { opacity: 0; transform: translateX(25px); }
-            100% { opacity: 1; transform: translateX(0); }
-        }
-
-        @keyframes slideInLeft {
-            0% { opacity: 0; transform: translateX(-25px); }
-            100% { opacity: 1; transform: translateX(0); }
-        }
-
-/* Нова ідеальна анімація для контенту Налаштувань */
-@keyframes fadeSlideIn {
-    0% { opacity: 0; transform: translateX(15px); }
-    100% { opacity: 1; transform: translateX(0); }
-}
-.anim-fade-slide {
-    animation: fadeSlideIn 0.25s ease-out forwards;
+input, textarea { 
+    width: 100%; 
+    padding: 9px 14px; 
+    background-color: var(--input-bg-color); 
+    border: 1px solid var(--input-border-color); 
+    border-radius: 14px; 
+    font-family: inherit;
+    font-size: 13px; 
+    color: var(--text-color); 
+    transition: all 0.2s ease-in-out; 
 }
 
-/* Класи, якими ми будемо керувати з JS */
-.anim-initial { animation: popIn 0.25s ease-out; }
-.anim-slide-right { animation: slideInRight 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); }
-.anim-slide-left { animation: slideInLeft 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); }
+input:focus, textarea:focus { 
+    border-color: var(--input-focus-border-color); 
+    outline: none;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+}
+
+/* === ВИПРАВЛЕННЯ ДЛЯ ЧЕКБОКСІВ === */
+input[type="checkbox"] {
+    padding: 0; /* Прибираємо зайві відступи, які ламають розмір */
+    transition: none; /* Вимикаємо анімацію, щоб не було "смикання" */
+    margin: 0;
+}
+
+input[type="checkbox"]:focus {
+    box-shadow: none !important; /* Забороняємо малювати велику тінь при кліку */
+    border-color: transparent !important;
+}
 
 /* Прибираємо стрілки для Chrome, Safari, Edge */
 #amount::-webkit-outer-spin-button,
@@ -1047,48 +377,333 @@ button.btn.btn-loading:hover {
 #smsPriceUltra::-webkit-inner-spin-button,
 #smsPriceEnergy::-webkit-outer-spin-button,
 #smsPriceEnergy::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    margin: 0;
 }
 
- 
-/* Вирівняли відступи лінії (було 17, стало 16 - для ідеальної сітки) */
-.setting-divider { 
-    border: none; 
-    border-top: 1px solid var(--input-border-color); 
-    margin: 16px 0; 
+.input-row {
+    display: flex;
+    gap: 12px; /* Відстань між полями */
+    width: 100%;
+    margin-top: 16px; /* Загальний відступ зверху */
 }
 
-/* === НОВИЙ ДИЗАЙН ВИБОРУ НОМЕРІВ === */
-.phone-badge {
-    color: var(--ultra-color); /* Синій колір, щоб привертав увагу */
-    font-size: 13px;
-    font-weight: 400;
+.input-row label {
+    margin-top: 0; /* Рядок сам робить відступ зверху */
+    margin-bottom: 3px; /* Зберігаємо відстань до поля */
 }
 
-[data-theme="dark"] .phone-badge {
-    color: var(--ultra-color); /* Світло-синій для темної теми */
+.input-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Вирівнює інпути по нижньому краю */
 }
 
-/* === М'ЯКА АНІМАЦІЯ СТРІЛОЧКИ ВНИЗ === */
-@keyframes bounceDown {
-    0%, 100% { transform: translateY(calc(-50% - 2px)); }
-    50% { transform: translateY(calc(-50% + 2px)); } /* Стрілочка ніжно опускається на 3px */
+.input-row .input-col:first-child {
+    flex: 5.5;
 }
 
-.anim-bounce-down {
-    animation: bounceDown 2s infinite ease-in-out;
+.input-row .input-col:last-child {
+    flex: 4.5;
 }
 
+/* Вирівнюємо колонки ідеально 50/50 тільки всередині Налаштувань */
+#settingsView .input-row .input-col {
+    flex: 1 !important;
+}
+
+/* Контейнер для позиціювання */
+.textarea-container {
+    position: relative;
+    width: 100%;
+    margin-top: 3px;
+}
+
+/* Оновлене поле: додаємо padding-right, щоб текст не залізав під кнопку */
+.textarea-container textarea {
+    width: 100%;
+    height: 126px;
+    resize: none;
+    padding: 8px 36px 8px 14px; /* 45px справа — це «безпечна зона» для кнопки */
+    line-height: 1.4;
+    display: block;
+}
+
+textarea::-webkit-scrollbar-track {
+    margin-top: 10px;    
+    margin-bottom: 10px; 
+    background: transparent;
+}
+
+.input-center { 
+    text-align: center; 
+    margin-bottom: 10px; 
+}
 
 .input-icon-wrapper {
     position: relative;
     width: 100%;
 }
 
+/* Якщо кнопка видима, робимо відступ тексту, щоб він не залазив під кнопку */
+input.has-dropdown {
+    padding-right: 32px !important;
+}
+
+/* ========================================= */
+/* 6. КНОПКИ ТА ІКОНКИ                       */
+/* ========================================= */
+
+/* --- ОСНОВНА КНОПКА (БЕЗ HOVER) --- */
+button.btn { 
+    width: 100%; 
+    height: 42px; 
+    padding: 0 16px; 
+    margin: 16px auto; 
+    font-family: inherit; 
+    font-size: 14px; 
+    font-weight: 600; 
+    letter-spacing: 0.03em;
+    cursor: pointer;  
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 8px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    border-radius: 14px; 
+    position: relative; 
+    
+    background: linear-gradient(135deg, rgba(0, 123, 255, 0.8) 0%, rgba(0, 80, 204, 0.8) 100%);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    color: #ffffff;
+    
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.45);
+    border-left: 1px solid rgba(255, 255, 255, 0.25);
+    
+    box-shadow: 0 8px 24px rgba(0, 123, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+[data-theme="dark"] button.btn {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.6) 0%, rgba(29, 78, 216, 0.6) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+/* --- ЕФЕКТ НАТИСНЕННЯ (ТІЛЬКИ ДЛЯ ГОЛОВНИХ КНОПОК) --- */
+#sendBtn:active, #saveSettingsBtn:active {
+    transform: translateY(1px) scale(0.97);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+    background: linear-gradient(135deg, rgba(0, 100, 220, 0.9) 0%, rgba(0, 70, 180, 0.9) 100%);
+    transition: all 0.1s ease-out;
+}
+
+[data-theme="dark"] #sendBtn:active, [data-theme="dark"] #saveSettingsBtn:active {
+    background: linear-gradient(135deg, rgba(29, 78, 216, 0.8) 0%, rgba(30, 64, 175, 0.8) 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* --- ЕФЕКТ СВІТІННЯ ПРИ НАВЕДЕННІ (ТІЛЬКИ ДЛЯ ГОЛОВНИХ КНОПОК) --- */
+#sendBtn:hover, #saveSettingsBtn:hover {
+    box-shadow: 0 12px 28px rgba(0, 123, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    background: linear-gradient(135deg, rgba(15, 135, 255, 0.9) 0%, rgba(0, 90, 220, 0.9) 100%);
+}
+
+[data-theme="dark"] #sendBtn:hover, [data-theme="dark"] #saveSettingsBtn:hover {
+    background: linear-gradient(135deg, rgba(70, 145, 255, 0.75) 0%, rgba(37, 99, 235, 0.75) 100%);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Відключена кнопка */
+button:disabled { 
+    background: rgba(220, 220, 220, 0.4) !important; 
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    color: rgba(100, 100, 100, 0.8) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: none !important;
+    cursor: not-allowed; 
+}
+[data-theme="dark"] button:disabled {
+    background: rgba(60, 60, 60, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: rgba(160, 160, 160, 0.6) !important;
+}
+
+/* Контейнер для тексту (анімації) */
+.btn-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    filter: blur(0px);
+    transform: scale(1);
+}
+
+.content-hidden {
+    opacity: 0;
+    filter: blur(4px);
+    transform: scale(0.92);
+}
+
+.sticky-footer .btn { width: 270px; margin: 0; }
+
+/* ==================================== */
+/* СТАТУСИ КНОПКИ (СВІТЛА ТЕМА)         */
+/* ==================================== */
+
+/* УСПІХ */
+button.btn.btn-success { 
+    background: rgba(34, 197, 94, 0.15) !important; 
+    color: #166534 !important; 
+    border: 1px solid rgba(34, 197, 94, 0.3) !important; 
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.15) !important;
+    cursor: default !important; 
+}
+
+/* ПОМИЛКА */
+button.btn.btn-error { 
+    background: rgba(239, 68, 68, 0.15) !important; 
+    color: #991b1b !important; 
+    border: 1px solid rgba(239, 68, 68, 0.3) !important; 
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15) !important;
+    cursor: default !important; 
+}
+
+/* ЗАВАНТАЖЕННЯ */
+button.btn.btn-loading { 
+    background: rgba(59, 130, 246, 0.12) !important; 
+    color: #1e40af !important; 
+    border: 1px solid rgba(59, 130, 246, 0.3) !important; 
+    cursor: wait !important; 
+    animation: glassPulseLight 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes glassPulseLight {
+    0% { box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1); background: rgba(59, 130, 246, 0.08) !important; }
+    100% { box-shadow: 0 8px 28px rgba(59, 130, 246, 0.25); background: rgba(59, 130, 246, 0.18) !important; }
+}
+
+/* ТЕМНА ТЕМА СТАТУСІВ (Неонове світіння) */
+[data-theme="dark"] button.btn.btn-success { 
+    background: rgba(74, 222, 128, 0.15) !important;
+    color: #4ade80 !important;
+    border: 1px solid rgba(74, 222, 128, 0.3) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(74, 222, 128, 0.1) !important;
+}
+
+[data-theme="dark"] button.btn.btn-error { 
+    background: rgba(248, 113, 113, 0.15) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(248, 113, 113, 0.3) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(248, 113, 113, 0.1) !important;
+}
+
+[data-theme="dark"] button.btn.btn-loading { 
+    background: rgba(96, 165, 250, 0.15) !important;
+    color: #93c5fd !important;
+    border: 1px solid rgba(96, 165, 250, 0.3) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    animation: glassPulseDark 1.5s infinite alternate ease-in-out;
+}
+
+@keyframes glassPulseDark {
+    0% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); background: rgba(96, 165, 250, 0.08) !important; }
+    100% { box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(96, 165, 250, 0.15); background: rgba(96, 165, 250, 0.18) !important; }
+}
+
+/* ==================================== */
+/* ДРІБНІ КНОПКИ ТА ІКОНКИ              */
+/* ==================================== */
+button img, .translit-inside-btn img, .inside-input-btn img { 
+    pointer-events: none; 
+    user-select: none; 
+}
+
+/* Трансліт */
+.translit-inside-btn { position: absolute; top: 5px; right: 7px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; padding: 0; background: transparent; border: none; cursor: pointer; z-index: 10; outline: none; transition: 0.2s; }
+.img-icon-translit { width: 20px; height: 20px; display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)); }
+
+/* Кнопки всередині інпутів (стрілочки) */
+.inside-input-btn { position: absolute; right: 15px; top: calc(50%); transform: translateY(-50%); background: none; border: none; font-size: 14px; cursor: pointer; padding: 0; z-index: 2; transition: 0.2s; }
+.inside-input-btn img { transition: transform 0.25s ease; }
+.inside-input-btn.open img { transform: rotate(-90deg); }
+
+/* Іконки в шапці (Гамбургер, Назад) */
+.icon-btn { display: flex; align-items: center; justify-content: center; background: none; border: none; font-size: 18px; cursor: pointer; padding: 0; color: #555; transition: 0.2s; }
+
+/* Розміри іконок */
+.img-icon { width: 24px; height: 24px; object-fit: contain; vertical-align: middle; }
+.img-icon-sm { width: 18px; height: 18px; object-fit: contain; vertical-align: middle; }
+.back-svg-icon { display: block; transition: transform 0.2s ease, color 0.2s ease; color: var(--header-color); }
+
+/* Іконки та дрібні кнопки */
+button img, 
+.translit-inside-btn img,
+.inside-input-btn img {
+    pointer-events: none;
+    user-select: none; /* Додатково забороняємо виділення іконки як тексту */
+}
+
+.translit-inside-btn {
+    position: absolute;
+    top: 5px;
+    right: 7px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    
+    /* Прибираємо фон та рамку */
+    background: transparent;
+    border: none;
+    
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+}
+
+/* Ефект при наведенні */
+.translit-inside-btn:hover {
+    transform: scale(1.1); /* Трохи збільшуємо саму іконку */
+    background: transparent; /* Залишаємо прозорою */
+}
+
+.translit-inside-btn:hover .img-icon-translit {
+    /* Легкий поворот іконки при наведенні для "магічного" ефекту */
+    transform: rotate(5deg);
+}
+
+/* Ефект при натисканні */
+.translit-inside-btn:active {
+    transform: scale(0.9);
+    opacity: 0.8;
+}
+
+/* Вимикаємо ефект скла для темної теми, бо фону немає */
+[data-theme="dark"] .translit-inside-btn {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+}
+
 .inside-input-btn {
     position: absolute;
-    right: 11px;
+    right: 15px;
     /* Відцентровуємо по вертикалі з урахуванням відступу інпута */
     top: calc(50%);
     transform: translateY(-50%);
@@ -1111,12 +726,6 @@ button.btn.btn-loading:hover {
     background-color: transparent;
 }
 
-/* Якщо кнопка видима, робимо відступ тексту, щоб він не залазив під кнопку */
-input.has-dropdown {
-    padding-right: 32px !important;
-
-}
-
 /* Плавний поворот іконки стрілки */
 .inside-input-btn img {
     transition: transform 0.25s ease;
@@ -1126,24 +735,74 @@ input.has-dropdown {
     transform: rotate(-90deg);
 }
 
+.icon-btn { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: none; 
+    border: none; 
+    font-size: 18px; 
+    cursor: pointer; 
+    padding: 0; 
+    color: #555; 
+    transition: 0.2s; 
+}
 
-/* === ПЛАВАЮЧЕ МЕНЮ === */
+.icon-btn-danger:hover { 
+    color: var(--danger-color); 
+}
+
+button.btn:active, .icon-btn:active { 
+    transform: scale(0.92); 
+    transition: transform 0.2s ease-out;
+}
+
+.img-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.img-icon-sm {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+.img-icon-translit {
+    width: 20px; /* Можна трохи збільшити, бо тепер немає рамки навколо */
+    height: 20px;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)); /* Додаємо легку тінь самій іконці */
+}
+
+.back-svg-icon {
+    display: block;
+    transition: transform 0.2s ease, color 0.2s ease;
+    /* Колір береться зі змінної теми */
+    color: var(--header-color); 
+}
+
+/* ========================================= */
+/* 7. ВИПАДАЮЧІ СПИСКИ (DROPDOWNS)           */
+/* ========================================= */
 .floating-dropdown {
     position: absolute;
     top: calc(100% + 4px);
     left: 0;
     width: 100%;
     height: auto;
-    max-height: 180px; /* ДОДАНО: Обмеження висоти. Якщо пунктів багато - з'явиться скрол */
+    max-height: 180px;
     background-color: var(--input-bg-color);
     border: 1px solid var(--input-border-color);
     border-radius: 14px;
     box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-    z-index: 999; /* ЗМІНЕНО: Підняв з 100 до 9999, щоб ТОЧНО перекривало кнопку "Відправити" */
+    z-index: 999;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 4px 0;
-
     transform-origin: top center;
     animation: dropdownOpen 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
@@ -1152,6 +811,376 @@ input.has-dropdown {
     margin-top: 10px;    
     margin-bottom: 10px; 
     background: transparent;
+}
+
+.floating-dropdown.closing {
+    animation: dropdownClose 0.15s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+[data-theme="dark"] .floating-dropdown {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+
+.dropdown-item {
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-color); /* Стандартний колір тексту */
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.dropdown-item:hover {
+    background-color: var(--select-bg);
+    color: var(--text-color-inv);
+    font-weight: 400;
+    padding-left: 18px;
+}
+
+/* ========================================= */
+/* 8. БОКОВЕ МЕНЮ (SIDEBAR)                  */
+/* ========================================= */
+#mainMenuBtn {
+    position: relative;
+    z-index: 1005; 
+    transition: opacity 0.2s ease-out; /* ДОДАНО: щоб хрестик плавно зникав */
+}
+
+/* === ІКОНКА ГАМБУРГЕР === */
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 22px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0px;
+}
+.hamburger-icon span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background-color: var(--header-color);
+    border-radius: 2px;
+    transition: all 0.25s ease-in-out;
+}
+
+/* Анімація перетворення в хрестик при відкритті */
+.icon-btn.menu-open .hamburger-icon span:nth-child(1),
+.icon-btn.open .hamburger-icon span:nth-child(1) { 
+    transform: translateY(7px) rotate(45deg); 
+}
+.icon-btn.menu-open .hamburger-icon span:nth-child(2),
+.icon-btn.open .hamburger-icon span:nth-child(2) { 
+    opacity: 0; 
+}
+.icon-btn.menu-open .hamburger-icon span:nth-child(3),
+.icon-btn.open .hamburger-icon span:nth-child(3) { 
+    transform: translateY(-7px) rotate(-45deg); 
+}
+
+/* === БОКОВЕ МЕНЮ === */
+.sidebar-menu {
+    position: fixed; 
+    top: 0; bottom: 0; 
+    right: -280px;
+    width: 240px;
+    z-index: 1001; 
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    overflow-y: auto;
+    /* === НОВЕ ДОРОГЕ СКЛО МЕНЮ === */
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-left: 1px solid rgba(255, 255, 255, 0.8); /* Білий блік зліва */
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.04); /* Тінь вліво */
+}
+
+[data-theme="dark"] .sidebar-menu { 
+    background: rgba(30, 30, 30, 0.65); 
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Виїзд меню */
+.sidebar-menu.open { 
+    transform: translateX(-280px); 
+}
+
+/* === ІЛЮЗІЯ ПЕРЕТВОРЕННЯ МЕНЮ В ЕКРАН НАЛАШТУВАНЬ === */
+.sidebar-menu.expanding-to-full {
+    width: 100%;
+    transform: translateX(-280px) !important; /* ФІКС: залишаємо -240px, щоб правий край не відривався від екрану */
+    background-color: var(--bg-color) !important; 
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-left: none !important;
+}
+
+.sidebar-menu.expanding-to-full > * {
+    opacity: 0 !important;
+    transition: opacity 0.15s ease-out;
+    pointer-events: none;
+}
+
+.sidebar-menu .menu-item, 
+.sidebar-menu .menu-item-text {
+    padding: 11px 16px;
+    border-radius: 14px;
+    margin: 2px 10px;
+    width: calc(100% - 20px);
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.18s ease, transform 0.15s ease, color 0.18s ease;
+    font-size: 13px;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+}
+
+.sidebar-menu .menu-item-text {
+    color: var(--subtitle-color);
+    cursor: default;
+    font-size: 12px;
+    justify-content: center;
+    opacity: 0.75;
+    letter-spacing: 0.02em;
+}
+
+/* Наведення — ніжний glassmorphism */
+.sidebar-menu .menu-item:hover {
+    background: rgba(0, 0, 0, 0.065);
+    color: var(--text-color);
+    transform: translateX(-3px);
+}
+
+[data-theme="dark"] .sidebar-menu .menu-item:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--text-color);
+    transform: translateX(-3px);
+}
+
+.sidebar-menu .menu-item:active {
+    transform: scale(0.96);
+}
+
+.sidebar-menu .menu-icon { 
+    width: 18px; height: 18px; margin-right: 10px; object-fit: contain; flex-shrink: 0; 
+}
+
+/* Заголовок сайдбару */
+.sidebar-header {
+    padding: 6px 18px 15px; 
+    margin-bottom: 5px; 
+    
+    /* === ЕФЕКТ ВИРІЗЬБЛЕННЯ (Світла тема) === */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* Легка темна тінь всередині */
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9); /* Яскравий білий відблиск на грані */
+}
+[data-theme="dark"] .sidebar-header {
+    /* === ЕФЕКТ ВИРІЗЬБЛЕННЯ (Темна тема) === */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.5); /* Глибока темна лінія (тінь) */
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05); /* Дуже ніжний відблиск світла знизу */
+}
+
+.sidebar-header-title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--subtitle-color);
+    opacity: 0.8;
+}
+
+/* Розділювач — розпірка по висоті */
+.menu-divider {
+    flex: 1;
+    border: none;
+    min-height: 12px;
+}
+
+/* Кнопка Update в меню */
+.sidebar-menu button.menu-item.update-item {
+    margin: 6px 10px 6px;
+    width: calc(100% - 20px);
+    background: linear-gradient(135deg, #007bff 0%, #0050cc 100%);
+    color: #ffffff;
+    border-radius: 14px;
+    justify-content: center;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.38);
+    animation: updatePulse 2.2s infinite alternate ease-in-out;
+    transform: translateX(0);
+}
+
+.sidebar-menu button.menu-item.update-item:hover {
+    background: linear-gradient(135deg, #1a8cff 0%, #0060ee 100%);
+    color: #ffffff;
+    transform: scale(1.02);
+    box-shadow: 0 6px 22px rgba(0, 123, 255, 0.55);
+}
+
+/* Для темної теми */
+[data-theme="dark"] .sidebar-menu button.menu-item.update-item {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+    animation: updatePulseDark 2.2s infinite alternate ease-in-out;
+}
+
+[data-theme="dark"] .sidebar-menu button.menu-item.update-item:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    box-shadow: 0 6px 22px rgba(59, 130, 246, 0.55);
+}
+
+/* ========================================= */
+/* 9. СПЕЦИФІЧНІ UI КОМПОНЕНТИ               */
+/* ========================================= */
+.sms-counter-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 13px; 
+    color: var(--subtitle-color);
+    margin: 9px 0  12px 0;
+    padding: 0 0px;
+    font-weight: 400;
+    white-space: nowrap; /* ВАЖЛИВО: Забороняє тексту переноситись на новий рядок */
+    overflow: hidden;    /* Ховає зайве, щоб не ламало вікно, якщо цифр буде мільйон */
+}
+
+.sms-counter-bar > div {
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.sms-counter-bar strong {
+    color: var(--text-color);
+    font-size: 13px;
+    margin: 0 2px;
+    font-weight: 400;  /* ← ОСЬ ВИПРАВЛЕННЯ */
+    vertical-align: baseline;
+}
+        
+.sms-warning {
+    color: var(--warning-text) !important;
+}
+
+/* === БЕЙДЖ ОНОВЛЕННЯ (Крапка) === */
+.menu-badge {
+    position: absolute;
+    top: -7px;
+    right: -6px;
+    width: 10px;
+    height: 10px;
+    background-color: var(--danger-color); /* Змінено з зеленого на колір уваги (червоний) */
+    border-radius: 50%;
+    border: 2px solid var(--bg-color);
+    animation: pulseNeon 1.5s infinite alternate ease-in-out;
+}
+
+[data-theme="dark"] .menu-badge {
+    animation: pulseNeonDark 1.5s infinite alternate ease-in-out;
+}
+
+.phone-badge {
+    color: var(--ultra-color); /* Синій колір, щоб привертав увагу */
+    font-size: 13px;
+    font-weight: 400;
+}
+
+[data-theme="dark"] .phone-badge {
+    color: var(--ultra-color); /* Світло-синій для темної теми */
+}
+
+.network-title { 
+    margin: 16px 0 6px 0; /* Зробили відступ вниз 6px, як у label */
+    font-size: 13px; 
+    padding-bottom: 2px; 
+    font-weight: 400; 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; /* Збільшили відстань між кулькою і текстом */
+    margin-left: 8px; /* Синхронізовано з label */
+}
+
+/* Розмір кульок біля назв провайдерів (Ultra / Energy) */
+.network-title .img-icon {
+    width: 16px;  /* Задай потрібний розмір, наприклад 14px, 16px чи 18px */
+    height: 16px;
+    margin-right: 4px; /* Відступ між кулькою і текстом */
+}
+
+/* ========================================= */
+/* 10. АНІМАЦІЇ ТА АДАПТАЦІЯ                 */
+/* ========================================= */
+/* Keyframes */
+@keyframes pulseNeon {
+    0% {
+        box-shadow: 0 0 0 0 rgba(191, 26, 26, 0.7);
+        transform: scale(0.95);
+    }
+    100% {
+        box-shadow: 0 0 6px 4px rgba(191, 26, 26, 0);
+        transform: scale(1.05);
+    }
+}
+
+@keyframes pulseNeonDark {
+    0% {
+        box-shadow: 0 0 0 0 rgba(235, 151, 25, 0.7);
+        transform: scale(0.95);
+    }
+    100% {
+        box-shadow: 0 0 6px 4px rgba(235, 151, 25, 0);
+        transform: scale(1.05);
+    }
+}
+
+/* Анімація: Налаштування від'їжджають вправо (якщо ви її ще не додали) */
+@keyframes slideOutRight {
+    0% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes updatePulse {
+    from { box-shadow: 0 4px 14px rgba(0, 123, 255, 0.32); }
+    to   { box-shadow: 0 4px 24px rgba(0, 123, 255, 0.58); }
+}
+
+@keyframes updatePulseDark {
+    from { box-shadow: 0 4px 14px rgba(59, 130, 246, 0.28); }
+    to   { box-shadow: 0 4px 24px rgba(59, 130, 246, 0.52); }
+}
+
+/* === ГОРИЗОНТАЛЬНА АНІМАЦІЯ ПЕРЕХОДІВ === */
+@keyframes slideInRight {
+    0% { opacity: 0; transform: translateX(25px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+    0% { opacity: 0; transform: translateX(-25px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeSlideIn {
+    0% { opacity: 0; transform: translateX(15px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+/* === М'ЯКА АНІМАЦІЯ СТРІЛОЧКИ ВНИЗ === */
+@keyframes bounceDown {
+    0%, 100% { transform: translateY(calc(-50% - 2px)); }
+    50% { transform: translateY(calc(-50% + 2px)); } /* Стрілочка ніжно опускається на 3px */
 }
 
 @keyframes dropdownOpen {
@@ -1164,32 +1193,24 @@ input.has-dropdown {
     to   { opacity: 0; transform: scaleY(0.85) translateY(-6px); }
 }
 
-.floating-dropdown.closing {
-    animation: dropdownClose 0.15s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+/* Класи для запуску анімацій */
+.anim-slide-out-right {
+    animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-[data-theme="dark"] .floating-dropdown {
-    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+.anim-fade-slide {
+    animation: fadeSlideIn 0.25s ease-out forwards;
 }
 
-/* Пункти меню (як <option> у шаблонах) */
-.dropdown-item {
-    padding: 8px 14px;
-    font-size: 13px;
-    color: var(--text-color); /* Стандартний колір тексту */
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+.anim-initial { animation: popIn 0.25s ease-out; }
+.anim-slide-right { animation: slideInRight 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); }
+.anim-slide-left { animation: slideInLeft 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); }
+
+.anim-bounce-down {
+    animation: bounceDown 2s infinite ease-in-out;
 }
 
-/* При наведенні (як виділений пункт у системному списку) */
-.dropdown-item:hover {
-    background-color: var(--select-bg);
-    color: var(--text-color-inv);
-    font-weight: 400;
-    padding-left: 18px;
-}
-
-/* === АДАПТАЦІЯ ДЛЯ SIDE PANEL === */
+/* Адаптація для бокової панелі (в самому низу!) */
 body.side-panel-mode {
     width: 100% !important;        /* Займаємо всю ширину панелі */
     max-height: none !important;   /* Дозволяємо тягнутись до самого низу екрану */
@@ -1212,8 +1233,7 @@ body.side-panel-mode .input-row {
 body.side-panel-mode .sticky-footer {
     max-width: none;
 }
-
-    </style>
+</style>
 </head>
 <body data-theme="light">
     <!-- ЕКРАН АВТОРИЗАЦІЇ -->
