@@ -1253,9 +1253,16 @@ document.addEventListener('DOMContentLoaded', () => {
         let uT = document.getElementById('onboardUltraToken').value.trim();
         let eT = document.getElementById('onboardEnergyToken').value.trim();
 
-        showButtonStatus('onboardSaveBtn', 'Захищаємо дані...', 'loading');
+        // Перевіряємо, чи є хоча б один токен
+        let hasData = (uT !== '' || eT !== '');
 
-        // Шифруємо
+        // Динамічний текст для кнопки
+        let loadingMsg = hasData ? 'Захищаємо дані...' : 'Завершуємо...';
+        let successMsg = hasData ? 'Налаштування збережено!' : 'Готово!';
+
+        showButtonStatus('onboardSaveBtn', loadingMsg, 'loading');
+
+        // Шифруємо (якщо поле пусте - безпечно поверне null)
         let encU = await encryptToken(uT);
         let encE = await encryptToken(eT);
 
@@ -1269,10 +1276,9 @@ document.addEventListener('DOMContentLoaded', () => {
             creds.ultra.token = uT; 
             creds.energy.token = eT; 
             
-            // ШТУЧНА ЗАТРИМКА 800мс: 
-            // даємо час анімації "⏳ Захищаємо дані..." проявитися і покрутитися
+            // ШТУЧНА ЗАТРИМКА 800мс: даємо час анімації завантаження
             setTimeout(() => {
-                showButtonStatus('onboardSaveBtn', 'Налаштування збережено!', 'success');
+                showButtonStatus('onboardSaveBtn', successMsg, 'success');
 
                 // Перехід на головний екран (ще через 1500мс)
                 setTimeout(() => {
@@ -1283,7 +1289,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateSmsCounter(); 
                     runAutoParse();
                 }, 1500);
-            }, 800); // <-- Ось ця затримка вирішує проблему
+            }, 800); 
         });
     });
 
