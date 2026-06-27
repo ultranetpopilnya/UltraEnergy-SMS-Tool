@@ -995,8 +995,11 @@ function showUpdateUI(newVersion) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // ДОДАЛИ В ЗАПИТ updateAvailable ТА newVersion
-    chrome.storage.local.get(['isAuthorized', 'theme', 'updateAvailable', 'newVersion'], (data) => {
+    // Додаємо нові ключі: isOnboardingComplete, draftUltraToken, draftEnergyToken
+    chrome.storage.local.get([
+        'isAuthorized', 'isOnboardingComplete', 'draftUltraToken', 'draftEnergyToken',
+        'theme', 'updateAvailable', 'newVersion', 'encUltra', 'encEnergy'
+    ], (data) => {
         
         let savedTheme = data.theme || 'light';
         document.body.setAttribute('data-theme', savedTheme);
@@ -1010,25 +1013,35 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('theme-loaded');
 
         if (data.isAuthorized) {
-            document.getElementById('loginView').style.display = 'none';
-            document.getElementById('onboardingView').style.display = 'none';
-            document.getElementById('mainView').style.display = 'block';
-            loadSettings();
-            runAutoParse();
-            
-            // 1. Миттєво показуємо оновлення, якщо бекграунд вже його знайшов раніше
-            if (data.updateAvailable) {
-                showUpdateUI(data.newVersion);
-            }
-
-            // 2. Змушуємо бекграунд перевірити ще раз ПРЯМО ЗАРАЗ (вимога: перевіряти при відкритті)
-            chrome.runtime.sendMessage({ type: 'CHECK_FOR_UPDATE_NOW' }, (response) => {
-                if (response && response.isNew) {
-                    showUpdateUI(response.version);
+            // НОВА ЛОГІКА: Перевіряємо чи ЗАВЕРШЕНО етап онбордингу
+            if (data.isOnboardingComplete) {
+                document.getElementById('loginView').style.display = 'none';
+                document.getElementById('onboardingView').style.display = 'none';
+                document.getElementById('mainView').style.display = 'block';
+                loadSettings();
+                runAutoParse();
+                
+                if (data.updateAvailable) {
+                    showUpdateUI(data.newVersion);
                 }
-            });
-            
+
+                chrome.runtime.sendMessage({ type: 'CHECK_FOR_UPDATE_NOW' }, (response) => {
+                    if (response && response.isNew) {
+                        showUpdateUI(response.version);
+                    }
+                });
+            } else {
+                // АВТОРИЗОВАНО, АЛЕ НЕ НАТИСНУТО "ЗБЕРЕГТИ"
+                document.getElementById('loginView').style.display = 'none';
+                document.getElementById('onboardingView').style.display = 'block';
+                document.getElementById('mainView').style.display = 'none';
+
+                // Відновлюємо введені, але ще не збережені токени (якщо вони є)
+                if (data.draftUltraToken) document.getElementById('onboardUltraToken').value = data.draftUltraToken;
+                if (data.draftEnergyToken) document.getElementById('onboardEnergyToken').value = data.draftEnergyToken;
+            }
         } else {
+            // КОРИСТУВАЧ ЩЕ НАВІТЬ НЕ ВВІВ ПАРОЛЬ
             document.getElementById('loginView').style.display = 'block';
             document.getElementById('onboardingView').style.display = 'none';
             document.getElementById('mainView').style.display = 'none';
@@ -1215,10 +1228,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let hashedInput = await sha256(inputPass);
 
         if (hashedInput === SECRET_HASH) {
-            chrome.storage.local.set({ isAuthorized: true }, () => {
-                document.getElementById('loginView').style.display = 'none';
-                document.getElementById('onboardingView').style.display = 'block';
-            });
+            // Показуємо успішний статус на кнопці
+            showButtonStatus('loginBtn', 'Авторизовано!', 'success');
+            
+            // Даємо користувачу 1 секунду побачити галочку
+            setTimeout(() => {
+                chrome.storage.local.set({ isAuthorized: true }, () => {
+                    document.getElementById('loginView').style.display = 'none';
+                    let onboardView = document.getElementById('onboardingView');
+                    onboardView.style.display = 'block';
+                    onboardView.classList.add('anim-fade-slide'); // Додаємо плавну анімацію появи
+                });
+            }, 1000); 
         } else {
             showButtonStatus('loginBtn', 'Невірний ключ!', 'error');
         }
@@ -1238,16 +1259,41 @@ document.addEventListener('DOMContentLoaded', () => {
         let encU = await encryptToken(uT);
         let encE = await encryptToken(eT);
 
-        chrome.storage.local.set({ encUltra: encU, encEnergy: encE }, () => {
+        chrome.storage.local.set({ 
+            encUltra: encU, 
+            encEnergy: encE,
+            isOnboardingComplete: true,
+            draftUltraToken: '',
+            draftEnergyToken: ''
+        }, () => {
             creds.ultra.token = uT; 
             creds.energy.token = eT; 
+            
+            // ШТУЧНА ЗАТРИМКА 800мс: 
+            // даємо час анімації "⏳ Захищаємо дані..." проявитися і покрутитися
             setTimeout(() => {
-                document.getElementById('onboardingView').style.display = 'none';
-                document.getElementById('mainView').style.display = 'block';
-                updateSmsCounter(); 
-                runAutoParse();
-            }, 500);
+                showButtonStatus('onboardSaveBtn', 'Налаштування збережено!', 'success');
+
+                // Перехід на головний екран (ще через 1500мс)
+                setTimeout(() => {
+                    document.getElementById('onboardingView').style.display = 'none';
+                    let mainView = document.getElementById('mainView');
+                    mainView.style.display = 'block';
+                    mainView.classList.add('anim-fade-slide'); 
+                    updateSmsCounter(); 
+                    runAutoParse();
+                }, 1500);
+            }, 800); // <-- Ось ця затримка вирішує проблему
         });
+    });
+
+    // === АВТОЗБЕРЕЖЕННЯ ЧЕРНЕТОК ТОКЕНІВ (щоб не зникли при закритті вікна) ===
+    document.getElementById('onboardUltraToken').addEventListener('input', (e) => {
+        chrome.storage.local.set({ draftUltraToken: e.target.value });
+    });
+    
+    document.getElementById('onboardEnergyToken').addEventListener('input', (e) => {
+        chrome.storage.local.set({ draftEnergyToken: e.target.value });
     });
 
     // === НОВА КНОПКА ЗАКРИТТЯ НАЛАШТУВАНЬ (ІКОНКА ХРЕСТИК) ===
